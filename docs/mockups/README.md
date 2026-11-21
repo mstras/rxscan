@@ -1,5 +1,7 @@
 # RxScan 1.1: design mockups
 
+These are the designs 1.1 was built from. The app's stylesheet (`app/static/rx.css`) started from `rx.css` here.
+
 ## Phone
 ![Phone screens](overview.png)
 

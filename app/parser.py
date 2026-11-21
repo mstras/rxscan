@@ -32,6 +32,7 @@ Rules:
 - If only a receipt total is shown for multiple prescriptions, put the total on the first one and explain in notes.
 - Shared details (pharmacy, date, patient, payment) should be repeated on each prescription entry.
 - Never output a full payment card number; at most the last 4 digits.
+- In uncertain_fields, list the keys of any values you had to guess at because the print was blurry, faded, cut off or ambiguous. Leave it empty when everything was clear.
 - If the image is not a prescription receipt or label, set is_prescription_receipt to false and return an empty list.
 """
 
@@ -64,6 +65,8 @@ def _normalize(result: dict) -> list[dict]:
             v = item.get(key)
             row[key] = "" if v is None else str(v).strip()
         if any(row.values()):
+            known = {f[0] for f in FIELDS}
+            row["_uncertain"] = [k for k in (item.get("uncertain_fields") or []) if k in known]
             rows.append(row)
     return rows
 
@@ -188,7 +191,7 @@ def _mock() -> dict:
             "pharmacy_address": "1 Main St, Anytown, NY", "pharmacy_phone": "555-0100",
             "insurance_plan": "Sample Rx Plan", "retail_price": "64.99", "insurance_paid": "54.99",
             "savings": "54.99", "patient_paid": "10.00", "payment_method": "VISA x1111",
-            "transaction_id": "000987", "notes": None,
+            "transaction_id": "000987", "notes": None, "uncertain_fields": ["refills_remaining"],
         }],
     }
 

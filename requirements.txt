@@ -6,3 +6,4 @@ pillow>=11
 pillow-heif>=0.20
 google-auth>=2.35
 requests>=2.32
+cryptography>=43

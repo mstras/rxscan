@@ -128,6 +128,23 @@ def save(data: bytes, meta: dict, base_url: str) -> dict:
     return {"storage": "local", "url": f"{base_url.rstrip('/')}/receipts/{quote(rel.as_posix())}", "name": name}
 
 
+def save_for_user(uid: int, data: bytes, meta: dict) -> dict:
+    """Upload to the person's own Drive folder (Google sign-in users)."""
+    from . import db, google
+    st = db.get_settings(uid)
+    if not st["folder_id"]:
+        raise ReceiptError("No receipt folder yet. Open Settings and choose or create one.")
+    jpeg = _archive_jpeg(data)
+    name = filename(meta)
+    desc = "Saved by RxScan" + (f" · {meta.get('medication')}" if meta.get("medication") else "")
+    try:
+        dest = google.child_folder(uid, st["folder_id"], _year(meta)) if st["year_folders"] else st["folder_id"]
+        res = google.upload(uid, dest, name, jpeg, "image/jpeg", desc)
+    except google.GoogleError as e:
+        raise ReceiptError(f"Couldn't save the receipt photo to Drive: {e}") from e
+    return {"storage": "drive", "url": res["url"], "name": res["name"]}
+
+
 def local_path(rel: str) -> Path | None:
     """Resolve /receipts/<rel> safely inside RECEIPTS_DIR."""
     base = local_dir()
