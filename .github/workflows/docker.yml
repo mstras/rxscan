@@ -29,7 +29,7 @@ jobs:
 
       # 1. Build for amd64 and make sure the container actually starts and serves.
       - name: Build test image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64
@@ -77,7 +77,7 @@ jobs:
 
       - name: Build & push
         if: github.event_name != 'pull_request'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64
