@@ -48,6 +48,9 @@ To test the UI without an API key, set `MOCK_PARSER=true`.
 ### Exposing via Pangolin
 Point a resource (e.g. `rxscan.strasserco.com`) at `192.168.50.229:8096`. These are medical records, so put it behind Pangolin SSO **and/or** set `APP_PASSWORD`. HTTPS is also what makes the app installable (see below).
 
+## Roadmap
+**1.1 (in design):** Google sign-in for each person, with their own sheet and receipt folder, and a refreshed design. See the [mockups](docs/mockups/README.md).
+
 ## Install as an app (PWA)
 RxScan is a full Progressive Web App:
 - **Installs to your home screen** with its own icon, opens full-screen, and has a "Scan a receipt" shortcut (long-press the icon on Android).

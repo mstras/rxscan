@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" class="light"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Google setup · RxScan 1.1 mockup</title>
+<link rel="stylesheet" href="../rx.css">
+</head><body>
+
+<div class="app"><header class="topbar"><button class="iconbtn" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="brand">Google setup</span><span class="spacer"></span>
+  <button class="iconbtn" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+  <button class="avatar" aria-label="Your account">M</button></header>
+  <p class="lede">One-time setup in Google Cloud so people can sign in with Google. About 15 minutes.</p>
+  <div class="group">
+    <div class="row"><div class="main"><div class="t">Turn on Sheets, Drive and Picker</div><div class="s">APIs & Services › Library</div></div><span class="pill green">Done</span></div>
+    <div class="row"><div class="main"><div class="t">Set up the consent screen</div><div class="s">External, then Publish app so sign-ins don't expire weekly</div></div><span class="pill green">Done</span></div>
+    <div class="row"><div class="main"><div class="t">Create a sign-in client</div><div class="s">Paste this redirect address: https://rxscan.strasserco.com/auth/google/callback</div></div><button class="act">Copy</button></div>
+    <div class="row"><div class="main"><div class="t">Paste the four values</div><div class="s">Client ID, client secret, API key, project number</div></div><span class="pill amber">2 of 4</span></div>
+  </div>
+  <h2>Values from Google Cloud</h2>
+  <div class="fields">
+    <div class="f full"><label>Client ID</label><input value="381920-abc.apps.googleusercontent.com"></div>
+    <div class="f full"><label>Client secret</label><input value="••••••••••••Zq4x"></div>
+    <div class="f full"><label>API key</label><input class="blank" placeholder="AIza…"></div>
+    <div class="f full"><label>Project number</label><input class="blank" placeholder="12-digit number"></div>
+  </div>
+</div>
+<nav class="bar"><div class="in"><button class="btn btn-primary">Save and test</button></div></nav>
+</body></html>
