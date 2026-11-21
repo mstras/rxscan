@@ -57,7 +57,9 @@ def json_schema() -> dict:
                 "description": "One entry per prescription line item on the receipt",
                 "items": {
                     "type": "object",
-                    "properties": props,
+                    "properties": {**props, "uncertain_fields": {
+                        "type": "array", "items": {"type": "string", "enum": [f[0] for f in FIELDS]},
+                        "description": "Keys of fields you filled in but could not read clearly (blurry, cut off, faded)"}},
                     "required": [f[0] for f in FIELDS],
                 },
             },
@@ -82,7 +84,10 @@ def gemini_schema() -> dict:
             "is_prescription_receipt": {"type": "BOOLEAN"},
             "prescriptions": {
                 "type": "ARRAY",
-                "items": {"type": "OBJECT", "properties": props, "propertyOrdering": [f[0] for f in FIELDS]},
+                "items": {"type": "OBJECT", "properties": {**props, "uncertain_fields": {
+                    "type": "ARRAY", "items": {"type": "STRING", "enum": [f[0] for f in FIELDS]},
+                    "description": "Keys of fields you filled in but could not read clearly"}},
+                    "propertyOrdering": [f[0] for f in FIELDS] + ["uncertain_fields"]},
             },
         },
         "required": ["is_prescription_receipt", "prescriptions"],

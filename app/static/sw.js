@@ -10,6 +10,11 @@ const SHELL = [
   "/",
   "/manifest.webmanifest",
   "/static/idb.js",
+  "/static/app.js",
+  "/static/rx.css",
+  "/static/fonts/public-sans.woff2",
+  "/static/fonts/barlow-condensed-600.woff2",
+  "/static/fonts/barlow-condensed-700.woff2",
   "/static/icons/icon-192.png",
   "/static/icons/icon-512.png",
   "/static/icons/maskable-192.png",
@@ -64,7 +69,7 @@ self.addEventListener("fetch", (e) => {
   }
 
   if (req.method !== "GET") return;
-  if (url.pathname.startsWith("/api/") || url.pathname === "/healthz") return; // network only, never cached
+  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/auth/") || url.pathname.startsWith("/receipts/") || url.pathname === "/healthz") return; // network only, never cached
   if (url.pathname === "/login" || url.pathname === "/logout") return;        // always live
 
   // Page navigations: network first (fresh code), cached shell when offline.

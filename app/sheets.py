@@ -246,10 +246,10 @@ def _cell(key: str, value) -> str:
     return v
 
 
-def append_rows(sid: str, tab: str, rows: list[dict]) -> dict:
+def append_rows(sid: str, tab: str, rows: list[dict], be=None) -> dict:
     if not rows:
         raise SheetsError("No rows to append")
-    be = backend()
+    be = be or backend()
 
     header = be.get_header(sid, tab)
     created_header = False

@@ -47,8 +47,10 @@ jobs:
           for i in $(seq 1 30); do curl -fs http://localhost:8000/healthz && break; sleep 1; done
           set -x
           curl -fs http://localhost:8000/healthz
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/api/config)" = 401
-          curl -fs -u admin:admin123 http://localhost:8000/api/config | grep -q '"vision"'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/api/me)" = 401
+          curl -fs -u admin:admin123 http://localhost:8000/api/me | grep -q '"vision"'
+          curl -fs -u admin:admin123 http://localhost:8000/api/admin/users | grep -q '"users"'
+          test -f "$RUNNER_TEMP/data/rxscan.db"                      # user database created
           curl -fs http://localhost:8000/login | grep -q 'Sign in'
           curl -fs http://localhost:8000/sw.js | grep -q 'rxscan-shell-'
           test "$(docker exec rxscan stat -c %u /proc/1)" = 1000    # app process dropped root

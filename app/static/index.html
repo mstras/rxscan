@@ -6,962 +6,199 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="RxScan">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="application-name" content="RxScan">
-<meta name="description" content="Photograph prescription receipts and append them to a Google Sheet.">
-<meta name="theme-color" content="#f5f5f2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121314" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Photograph prescription receipts and add them to your Google Sheet.">
+<meta name="theme-color" content="#E7ECEE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1820" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
 <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png">
 <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+<link rel="preload" href="/static/fonts/barlow-condensed-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/public-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/rx.css">
 <script src="/static/idb.js"></script>
 <title>RxScan</title>
-<style>
-  :root {
-    --bg: #f5f5f2; --card: #fff; --ink: #1c1d1f; --muted: #6b6f76; --line: #e2e2dc;
-    --accent: #0f766e; --accent-ink: #fff; --warn: #b45309; --err: #b91c1c; --ok: #15803d;
-    --r: 12px;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg: #121314; --card: #1c1d1f; --ink: #ececea; --muted: #9a9ea5; --line: #2c2e31;
-            --accent: #2dd4bf; --accent-ink: #062b27; }
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-         background: var(--bg); color: var(--ink); padding: env(safe-area-inset-top) 0 calc(90px + env(safe-area-inset-bottom)); }
-  header { padding: 18px 16px 6px; display: flex; align-items: baseline; justify-content: space-between; }
-  header h1 { margin: 0; font-size: 22px; letter-spacing: -0.01em; }
-  header small { color: var(--muted); font-size: 12px; }
-  main { max-width: 760px; margin: 0 auto; padding: 0 12px; }
-  section { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; margin: 12px 0; }
-  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; display: flex; justify-content: space-between; align-items: center; }
-  label { font-size: 12px; color: var(--muted); display: block; margin: 8px 0 4px; }
-  input, select { width: 100%; font: inherit; padding: 10px 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--ink); }
-  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-  button { font: inherit; font-weight: 600; border: 0; border-radius: 10px; padding: 11px 14px; cursor: pointer; background: var(--line); color: var(--ink); }
-  button.primary { background: var(--accent); color: var(--accent-ink); }
-  button:disabled { opacity: .5; cursor: default; }
-  button.link { background: none; padding: 4px 6px; color: var(--accent); font-weight: 500; font-size: 14px; }
-  .row { display: flex; gap: 8px; }
-  .row > * { flex: 1; }
-  .muted { color: var(--muted); font-size: 13px; }
-  .status { font-size: 14px; margin-top: 8px; min-height: 1em; }
-  .status.err { color: var(--err); } .status.ok { color: var(--ok); } .status.warn { color: var(--warn); }
-  .recent { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .chip { font-size: 13px; padding: 5px 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); cursor: pointer; }
-  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; margin-top: 10px; }
-  .thumb { position: relative; aspect-ratio: 3/4; border-radius: 9px; overflow: hidden; background: var(--bg); border: 1px solid var(--line); }
-  .thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .thumb .x { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; padding: 0; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; font-size: 14px; line-height: 24px; }
-  .thumb .badge { position: absolute; left: 0; right: 0; bottom: 0; font-size: 11px; padding: 3px 5px; background: rgba(0,0,0,.65); color: #fff; }
-  .rx { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-top: 10px; background: var(--bg); }
-  .rx-head { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
-  .rx-title { font-weight: 650; }
-  .rx-sub { font-size: 13px; color: var(--muted); }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
-  .grid .full { grid-column: 1 / -1; }
-  .grid input { padding: 8px 9px; font-size: 15px; background: var(--card); }
-  .grid input.empty { border-style: dashed; }
-  details summary { cursor: pointer; color: var(--accent); font-size: 14px; margin-top: 10px; }
-  .bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-         background: color-mix(in srgb, var(--card) 92%, transparent); backdrop-filter: blur(8px); border-top: 1px solid var(--line); }
-  .bar .inner { max-width: 760px; margin: 0 auto; display: flex; gap: 8px; }
-  .bar button { flex: 1; padding: 14px; }
-  .hidden { display: none !important; }
-  .pill { font-size: 11px; font-weight: 650; padding: 3px 8px; border-radius: 999px; background: var(--line); color: var(--muted); }
-  .pill.off { background: #fde68a; color: #78350f; }
-  button.install { padding: 6px 10px; font-size: 13px; background: var(--accent); color: var(--accent-ink); }
-  .toast { position: fixed; left: 12px; right: 12px; bottom: calc(84px + env(safe-area-inset-bottom)); max-width: 736px; margin: 0 auto;
-           background: var(--ink); color: var(--bg); border-radius: 12px; padding: 12px 14px; display: flex; gap: 10px; align-items: center;
-           box-shadow: 0 6px 24px rgba(0,0,0,.25); z-index: 20; font-size: 14px; }
-  .toast span { flex: 1; }
-  .toast button { padding: 8px 12px; font-size: 14px; background: var(--accent); color: var(--accent-ink); }
-  .toast button.dismiss { background: transparent; color: var(--bg); opacity: .7; }
-  @media (display-mode: standalone) { header { padding-top: 10px; } }
-  .gear { background: none; padding: 6px 8px; font-size: 20px; line-height: 1; }
-  .hdr-right { display: flex; align-items: center; gap: 6px; }
-  .seg { display: flex; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 3px; }
-  .seg button { flex: 1; padding: 8px; background: none; font-weight: 500; font-size: 14px; }
-  .seg button.on { background: var(--card); box-shadow: 0 1px 2px rgba(0,0,0,.12); font-weight: 650; }
-  .inline { display: flex; gap: 6px; } .inline input { flex: 1; } .inline button { flex: none; padding: 10px 12px; font-size: 14px; }
-  .src { font-size: 11px; color: var(--muted); margin-left: 6px; font-weight: 400; }
-  .check { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 14px; }
-  .check input { width: auto; }
-  .suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-  .steps { margin: 8px 0 0; padding-left: 20px; font-size: 14px; }
-  .steps li { margin: 6px 0; }
-  .steps a { color: var(--accent); }
-  textarea { width: 100%; font: 12px/1.4 ui-monospace, Menlo, monospace; padding: 8px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--ink); height: 140px; }
-  .sub { font-size: 14px; font-weight: 650; margin: 14px 0 2px; }
-  .connected { color: var(--ok); font-size: 14px; }
-  .folder-current { display: flex; align-items: center; gap: 8px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); font-size: 14px; }
-  .folder-current span { flex: 1; overflow-wrap: anywhere; }
-  .browser { border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin-top: 8px; background: var(--bg); }
-  .crumbs { font-size: 13px; color: var(--muted); margin-bottom: 6px; overflow-wrap: anywhere; }
-  .tabs2 { display: flex; gap: 6px; margin-bottom: 8px; }
-  .tabs2 button { flex: 1; padding: 7px; font-size: 13px; font-weight: 500; background: var(--card); border: 1px solid var(--line); }
-  .tabs2 button.on { border-color: var(--accent); color: var(--accent); font-weight: 650; }
-  .flist { max-height: 260px; overflow-y: auto; border: 1px solid var(--line); border-radius: 9px; background: var(--card); }
-  .flist button { display: flex; width: 100%; text-align: left; gap: 8px; background: none; border-radius: 0; border-bottom: 1px solid var(--line); padding: 11px 12px; font-weight: 500; font-size: 15px; }
-  .flist button:last-child { border-bottom: 0; }
-  .flist .empty { padding: 14px 12px; color: var(--muted); font-size: 14px; }
-  hr { border: 0; border-top: 1px solid var(--line); margin: 16px 0 6px; }
-  code { font-size: 12px; background: var(--bg); padding: 2px 5px; border-radius: 5px; word-break: break-all; }
-</style>
 </head>
-<body>
-<header><h1>RxScan</h1><div class="hdr-right"><span class="pill off hidden" id="offlinePill">Offline</span><button class="install hidden" id="installBtn">Install</button><small id="vision"></small><button class="gear" id="openSettings" title="Settings" aria-label="Settings">⚙︎</button></div></header>
-<main>
+<body data-view="scan">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-mark" viewBox="0 0 24 24"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z" fill="#fff"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="i-photos" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.5"/></symbol>
+  <symbol id="i-sheet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 9v12"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 6h6l2 2h10v11H3z"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m7.5 12.5 3 3 6-6.5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-people" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5c2.3.3 3.9 1.9 4.5 4.5"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M15 8l2 2"/></symbol>
+</svg>
 
-  <section id="settingsSec" class="hidden">
-    <h2>Settings <button class="link" id="closeSettings">Close</button></h2>
-    <div id="mockNote" class="status warn hidden">MOCK_PARSER is on: parsing returns sample data regardless of these settings.</div>
-    <label>Vision provider</label>
-    <div class="seg" id="providerSeg"></div>
-
-    <div data-p="gemini">
-      <label for="s_gemini_api_key">Gemini API key<span class="src" id="src_gemini_api_key"></span></label>
-      <input id="s_gemini_api_key" type="password" autocomplete="off" placeholder="AIza…">
-      <label for="s_gemini_model">Model<span class="src" id="src_gemini_model"></span></label>
-      <div class="inline"><input id="s_gemini_model" list="dl_gemini" autocomplete="off"><button data-load="gemini">Load list</button></div>
-      <datalist id="dl_gemini"></datalist>
-      <div class="suggest" data-suggest="gemini"></div>
+<div class="shell">
+  <!-- desktop sidebar -->
+  <aside class="side">
+    <div class="brandrow"><div class="mark"><svg><use href="#i-mark"/></svg></div><span class="brand">RxScan</span></div>
+    <a href="#scan" data-nav="scan"><svg><use href="#i-camera"/></svg>Scan receipts</a>
+    <a href="#settings" data-nav="settings"><svg><use href="#i-gear"/></svg>Your settings</a>
+    <div class="adminnav" hidden>
+      <div class="navh">Admin</div>
+      <a href="#people" data-nav="people"><svg><use href="#i-people"/></svg>People</a>
+      <a href="#reading" data-nav="reading"><svg><use href="#i-eye"/></svg>Reading receipts</a>
+      <a href="#google" data-nav="google"><svg><use href="#i-key"/></svg>Google setup</a>
     </div>
+    <div class="me"><span class="avatar" data-avatar></span><div><div class="t" data-name></div><div class="s" data-email></div></div></div>
+  </aside>
 
-    <div data-p="anthropic">
-      <label for="s_anthropic_api_key">Anthropic API key<span class="src" id="src_anthropic_api_key"></span></label>
-      <input id="s_anthropic_api_key" type="password" autocomplete="off" placeholder="sk-ant-…">
-      <label for="s_anthropic_model">Model<span class="src" id="src_anthropic_model"></span></label>
-      <div class="inline"><input id="s_anthropic_model" list="dl_anthropic" autocomplete="off"><button data-load="anthropic">Load list</button></div>
-      <datalist id="dl_anthropic"></datalist>
-      <div class="suggest" data-suggest="anthropic"></div>
-    </div>
+  <div class="appcol">
+    <!-- phone top bar -->
+    <header class="topbar view-pad">
+      <div class="home"><div class="mark"><svg><use href="#i-mark"/></svg></div><span class="brand">RxScan</span></div>
+      <div class="title"><button class="iconbtn" id="backBtn" aria-label="Back"><svg><use href="#i-back"/></svg></button><span class="brand" id="topTitle">Review</span></div>
+      <span class="spacer"></span>
+      <span class="offline-pill" id="offlinePill" hidden>Offline</span>
+      <a class="iconbtn" href="#settings" aria-label="Settings"><svg><use href="#i-gear"/></svg></a>
+      <a class="avatar" href="#settings" data-avatar aria-label="Your account"></a>
+    </header>
 
-    <div data-p="ollama">
-      <label for="s_ollama_url">Ollama URL<span class="src" id="src_ollama_url"></span></label>
-      <input id="s_ollama_url" type="url" autocomplete="off" placeholder="http://192.168.50.229:11434">
-      <label for="s_ollama_model">Model<span class="src" id="src_ollama_model"></span></label>
-      <div class="inline"><input id="s_ollama_model" list="dl_ollama" autocomplete="off"><button data-load="ollama">Load list</button></div>
-      <datalist id="dl_ollama"></datalist>
-      <div class="suggest" data-suggest="ollama"></div>
-    </div>
-
-    <hr>
-    <div class="sub" id="gsAnchor">Google Sheets connection</div>
-    <div id="gsStatus" class="muted"></div>
-    <button class="link hidden" id="gsShowSteps" style="padding:4px 0">Show setup steps</button>
-    <div id="gsSetup">
-    <ol class="steps">
-      <li><button class="link" id="copyScript" style="padding:0">Copy setup script</button> (it has a secret key unique to this server built in)
-        <details id="scriptBox" class="hidden"><summary>Show script</summary><textarea id="scriptText" readonly></textarea></details></li>
-      <li>Open <a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">script.google.com → new project</a>, select all the code there, and paste over it. Save.</li>
-      <li><b>Deploy → New deployment</b> → gear ⚙ → <b>Web app</b>. Execute as: <b>Me</b>. Who has access: <b>Anyone</b>. Click Deploy, then <b>Authorize access</b>. If Google warns "unverified", click Advanced → Go to project. That's normal for your own script.</li>
-      <li>Copy the <b>Web app URL</b> (ends in <code>/exec</code>) and paste it here:</li>
-    </ol>
-    <div class="inline"><input id="s_apps_script_url" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec"><button class="primary" id="connectSheets">Connect</button></div>
-    </div>
-    <details style="margin-top:6px"><summary>Use a service account instead</summary>
-      <p class="muted">Advanced: mount a service-account JSON key at <code>config/service-account.json</code> and share each sheet with its email. It can't list or create sheets.</p>
-      <label for="s_sheets_backend">Connection to use</label>
-      <select id="s_sheets_backend"><option value="auto">Automatic (Apps Script if set up)</option><option value="apps_script">Apps Script</option><option value="service_account">Service account</option></select>
-    </details>
-
-    <div class="sub">Receipt copies</div>
-    <label for="s_receipt_storage">Save a copy of each receipt photo<span class="src" id="src_receipt_storage"></span></label>
-    <select id="s_receipt_storage">
-      <option value="auto">Automatic (Drive if connected)</option>
-      <option value="drive">Google Drive</option>
-      <option value="local">This server (data/receipts)</option>
-      <option value="off">Don't save copies</option>
-    </select>
-    <div id="driveFolderBox">
-      <label>Drive folder</label>
-      <div class="folder-current"><span id="folderPath">My Drive › RxScan Receipts</span><button class="link" id="chooseFolder">Change</button></div>
-      <div id="folderBrowser" class="browser hidden">
-        <div class="tabs2"><button id="fMyDrive" class="on">My Drive</button><button id="fShared">Shared with me</button></div>
-        <div class="crumbs" id="crumbs">Loading…</div>
-        <div class="flist" id="flist"></div>
-        <div class="row" style="margin-top:8px"><button id="fUp">↑ Up</button><button id="fNew">＋ New folder</button></div>
-        <button class="primary" id="fUse" style="width:100%;margin-top:8px">Use this folder</button>
-        <label for="fLink">Or paste a Drive folder link (works for shared drives)</label>
-        <div class="inline"><input id="fLink" type="url" autocomplete="off" placeholder="https://drive.google.com/drive/folders/…"><button id="fLinkUse">Use</button></div>
-        <button class="link" id="fReset" style="padding:8px 0 0">Reset to default (My Drive › RxScan Receipts)</button>
-      </div>
-    </div>
-    <div id="localFolderBox" class="hidden">
-      <label for="s_receipts_local_dir">Server folder (path inside the container)<span class="src" id="src_receipts_local_dir"></span></label>
-      <input id="s_receipts_local_dir" autocomplete="off" placeholder="/data/receipts">
-      <p class="muted" style="margin:6px 0 0">To use another folder on homeserv or a NAS share, mount it in docker-compose.yml (e.g. <code>- /mnt/two/Receipts:/receipts</code>), enter <code>/receipts</code> here and tap Save.</p>
-    </div>
-    <label class="check"><input type="checkbox" id="s_receipts_year_folders"> Put photos in a subfolder per year</label>
-    <p class="muted" style="margin:6px 0 0">Copies are saved when you append and linked in the sheet's “Receipt” column. Drive copies are private to your Google account.</p>
-
-    <hr>
-    <label for="s_default_sheet_url">Default sheet URL<span class="src" id="src_default_sheet_url"></span></label>
-    <input id="s_default_sheet_url" type="url" autocomplete="off" placeholder="Optional">
-    <div class="row">
-      <div><label for="s_default_sheet_tab">Default tab<span class="src" id="src_default_sheet_tab"></span></label>
-        <input id="s_default_sheet_tab" autocomplete="off" placeholder="Optional"></div>
-      <div><label for="s_max_image_edge">Max image size (px)<span class="src" id="src_max_image_edge"></span></label>
-        <input id="s_max_image_edge" type="number" min="800" max="4000" step="100"></div>
-    </div>
-    <label class="check"><input type="checkbox" id="s_add_missing_columns"> Add missing RxScan columns to sheets that already have headers</label>
-
-    <div class="row" style="margin-top:14px">
-      <button id="testConn">Test connection</button>
-      <button class="primary" id="saveSettings">Save</button>
-    </div>
-    <div class="status" id="settingsStatus"></div>
-    <p class="muted" id="pwNote"></p>
-    <form method="post" action="/logout" id="logoutForm" class="hidden"><button type="submit" style="width:100%">Sign out <span id="whoami"></span></button></form>
-  </section>
-
-  <section id="sheetSec">
-    <h2>1 · Google Sheet <button class="link hidden" id="changeSheet">Change</button></h2>
-    <div id="sheetPicker">
-      <div id="notConnected" class="hidden">
-        <p class="muted" style="margin-top:0">Connect your Google account once, then pick any of your sheets here.</p>
-        <button class="primary" id="connectBtn" style="width:100%">Connect Google Sheets</button>
-      </div>
-      <div id="listPicker" class="hidden">
-        <label for="sheetSelect">Your sheets</label>
-        <select id="sheetSelect"><option value="">Loading…</option></select>
-        <div class="row" style="margin-top:8px">
-          <button id="newSheet">＋ New sheet</button>
-          <button id="showUrl">Paste a link</button>
+    <!-- ========== Scan & review ========== -->
+    <main class="view" id="v-scan">
+      <div class="pagehead"><div><h1>Scan receipts</h1><p class="sub" id="scanSub">Photograph a receipt to get started.</p></div>
+        <div class="acts"><button class="btn btn-line" id="clearBtn" hidden>Clear batch</button><button class="btn btn-primary" id="appendBtnTop" disabled>Add to sheet</button></div></div>
+      <div id="notices"></div>
+      <div class="scanlayout">
+        <div class="left">
+          <section class="capture" id="capture"><div class="scanline"></div>
+            <h1>Scan a receipt</h1><p>Photograph the receipt or the label on the pharmacy bag. Several at once is fine.</p>
+            <div class="actions">
+              <button class="btn btn-primary" id="takePhoto"><svg><use href="#i-camera"/></svg><span class="lbl-phone">Take photo</span></button>
+              <button class="btn btn-quiet" id="pickFiles"><svg><use href="#i-photos"/></svg>Choose photos</button>
+            </div>
+            <div class="drop" id="dropHint" hidden><b>Drop photos here</b><br>JPEG, PNG or HEIC, several at once</div>
+            <input id="cam" type="file" accept="image/*" capture="environment" hidden>
+            <input id="files" type="file" accept="image/*,.heic,.heif" multiple hidden>
+          </section>
+          <div id="batchBox" hidden>
+            <h2 class="sectionhead">This batch <span class="muted" id="batchCount"></span></h2>
+            <div class="queue" id="queue"></div>
+          </div>
+          <div><h2>Where things go</h2><div id="dest"></div></div>
+        </div>
+        <div class="right">
+          <p class="lede reviewhead">Check each label against the receipt. Tap Edit to fix anything before it goes to your sheet.</p>
+          <div class="sectionhead hide-phone" id="labelsHead" hidden><h2>Check each label</h2><span class="muted">Edit anything before it goes to your sheet</span></div>
+          <div class="labels" id="labels"></div>
+          <div class="empty" id="labelsEmpty"><b>Nothing to check yet</b>Labels appear here after RxScan reads your photos.</div>
         </div>
       </div>
-      <div id="urlPicker" class="hidden">
-        <label for="sheetUrl">Sheet URL</label>
-        <input id="sheetUrl" type="url" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/…" autocomplete="off">
-        <div class="row" style="margin-top:8px"><button id="loadSheet">Load sheet</button></div>
+    </main>
+
+    <!-- ========== Your settings ========== -->
+    <main class="view" id="v-settings" hidden>
+      <div class="pagehead"><div><h1>Your settings</h1><p class="sub">Where your prescriptions and receipt photos go.</p></div></div>
+      <div class="settings-web">
+        <div>
+          <h2>Your sheet</h2>
+          <div class="group" id="sheetGroup"></div>
+          <h2>Account</h2>
+          <div class="group">
+            <div class="row"><span class="ini avatar" data-avatar></span><div class="main"><div class="t" data-name></div><div class="s" data-email></div></div><span class="pill green" id="rolePill" hidden>Admin</span></div>
+            <div class="row"><div class="main"><div class="t">Sign out on this device</div></div><form method="post" action="/logout"><button class="act red">Sign out</button></form></div>
+          </div>
+        </div>
+        <div>
+          <h2>Receipt photos</h2>
+          <div class="group" id="folderGroup"></div>
+          <h2 id="installH">Install</h2>
+          <div class="group" id="installGroup">
+            <div class="row"><div class="main"><div class="t">Add RxScan to this device</div><div class="s" id="installHint">Opens in its own window, like an app</div></div><button class="act" id="installBtn">Install</button></div>
+          </div>
+          <div id="adminLinks" hidden>
+            <h2>Admin</h2>
+            <div class="group">
+              <div class="row"><div class="main"><div class="t">People</div><div class="s" id="peopleSummary">Who can sign in</div></div><a class="act" href="#people">Manage</a></div>
+              <div class="row"><div class="main"><div class="t">Reading receipts</div><div class="s" id="visionSummary"></div></div><a class="act" href="#reading">Change</a></div>
+              <div class="row"><div class="main"><div class="t">Google connection</div><div class="s" id="googleSummary"></div></div><a class="act" href="#google">Open</a></div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="recent" id="recent"></div>
-      <p class="muted" id="shareHint"></p>
-    </div>
-    <div id="sheetChosen" class="hidden">
-      <div class="rx-title" id="sheetTitle"></div>
-      <label for="tab">Tab</label>
-      <select id="tab"></select>
-    </div>
-    <div class="status" id="sheetStatus"></div>
-  </section>
+      <div class="status" id="settingsStatus"></div>
+    </main>
 
-  <section>
-    <h2>2 · Receipts</h2>
-    <div class="row">
-      <button class="primary" id="takePhoto">📷 Take photo</button>
-      <button id="pickFiles">Choose photos</button>
-    </div>
-    <input id="cam" type="file" accept="image/*" capture="environment" class="hidden">
-    <input id="files" type="file" accept="image/*,.heic,.heif" multiple class="hidden">
-    <div class="thumbs" id="thumbs"></div>
-    <div class="status" id="parseStatus"></div>
-  </section>
+    <!-- ========== Admin: people ========== -->
+    <main class="view" id="v-people" hidden>
+      <div class="pagehead"><div><h1>People</h1><p class="sub">Only these Google accounts can sign in. Each person gets their own sheet and photo folder.</p></div></div>
+      <p class="lede hide-desktop">Only these Google accounts can sign in. Each person gets their own sheet and photo folder.</p>
+      <form class="addbar" id="addForm"><input id="addEmail" type="email" placeholder="name@gmail.com" aria-label="Email to add" autocomplete="off" required><button class="btn btn-primary">Add person</button></form>
+      <div class="status" id="peopleStatus"></div>
+      <div class="tablewrap"><table class="people"><thead><tr><th>Person</th><th>Role</th><th>Sheet</th><th>Last used</th><th></th></tr></thead><tbody id="peopleRows"></tbody></table></div>
+      <p class="muted" style="margin-top:12px">Removing someone signs them out and stops RxScan from using their Google access. Their sheet and photos stay in their Drive.</p>
+    </main>
 
-  <section id="reviewSec" class="hidden">
-    <h2>3 · Review <button class="link" id="addRow">+ Add row</button></h2>
-    <p class="muted" style="margin:0">Check the values before appending. Dashed boxes were blank on the receipt.</p>
-    <div id="rows"></div>
-  </section>
+    <!-- ========== Admin: reading receipts ========== -->
+    <main class="view" id="v-reading" hidden>
+      <div class="pagehead"><div><h1>Reading receipts</h1><p class="sub">The AI model that reads receipt photos. Everyone uses this key.</p></div></div>
+      <p class="lede hide-desktop">The AI model that reads receipt photos. Everyone uses this key.</p>
+      <div style="max-width:560px">
+        <div class="seg" id="providerSeg" role="tablist"></div>
+        <div class="fields wide" style="margin-top:14px">
+          <div class="f" id="keyField"><label for="vKey">API key <span class="muted" id="vKeySrc"></span></label><input id="vKey" type="password" autocomplete="off"></div>
+          <div class="f" id="urlField" hidden><label for="vUrl">Ollama address</label><input id="vUrl" type="url" placeholder="http://192.168.50.229:11434"></div>
+          <div class="f"><label for="vModel">Model</label><div class="inline"><input id="vModel" list="vModels" autocomplete="off"><button class="btn btn-line" id="vLoad" type="button">Load list</button></div><datalist id="vModels"></datalist><div class="suggest" id="vSuggest"></div></div>
+        </div>
+        <div class="inline" style="margin-top:16px"><button class="btn btn-line" id="vTest">Test</button><button class="btn btn-primary" id="vSave">Save</button></div>
+        <div class="status" id="visionStatus"></div>
+      </div>
+    </main>
 
-  <div class="status" id="appendStatus"></div>
-</main>
+    <!-- ========== Admin: Google setup ========== -->
+    <main class="view" id="v-google" hidden>
+      <div class="pagehead"><div><h1>Google setup</h1><p class="sub">One-time setup in Google Cloud so people can sign in with Google. About 15 minutes.</p></div>
+        <div class="acts"><button class="btn btn-primary" data-gsave>Save and test</button></div></div>
+      <p class="lede hide-desktop">One-time setup in Google Cloud so people can sign in with Google. About 15 minutes.</p>
+      <div class="steps2">
+        <div>
+          <h2>In Google Cloud Console</h2>
+          <div class="group" id="gSteps"></div>
+        </div>
+        <div>
+          <h2>Values from Google Cloud</h2>
+          <div class="fields">
+            <div class="f full"><label for="gClientId">Client ID</label><input id="gClientId" autocomplete="off" placeholder="…apps.googleusercontent.com"></div>
+            <div class="f full"><label for="gSecret">Client secret</label><input id="gSecret" type="password" autocomplete="off"></div>
+            <div class="f"><label for="gApiKey">API key</label><input id="gApiKey" autocomplete="off" placeholder="AIza…"></div>
+            <div class="f"><label for="gProject">Project number</label><input id="gProject" inputmode="numeric" autocomplete="off" placeholder="12-digit number"></div>
+          </div>
+          <button class="btn btn-primary hide-desktop" data-gsave style="width:100%;margin-top:14px">Save and test</button>
+          <div class="status" id="gStatus"></div>
+          <div id="gNotice"></div>
+          <details class="adv" id="legacyBox">
+            <summary>Older connection for the admin password (no Google sign-in)</summary>
+            <p class="muted">When you sign in with the admin password, RxScan uses this server-wide Apps Script bridge, like version 1.0. People who sign in with Google don't use it.</p>
+            <div class="stack-sm">
+              <button class="btn btn-line" id="copyScript">Copy setup script</button>
+              <textarea class="script" id="scriptText" readonly hidden></textarea>
+              <div class="inline"><input id="bridgeUrl" type="url" placeholder="https://script.google.com/macros/s/…/exec"><button class="btn btn-primary" id="bridgeConnect">Connect</button></div>
+              <div class="inline"><input id="legacySheet" type="url" placeholder="Sheet link for admin-password scans"><select id="legacyTab"><option value="">Tab</option></select></div>
+              <div class="status" id="legacyStatus"></div>
+            </div>
+          </details>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
 
-<div class="toast hidden" id="toast"><span id="toastMsg"></span><button id="toastAct"></button><button class="dismiss" id="toastClose" aria-label="Dismiss">✕</button></div>
+<!-- phone bottom bar -->
+<nav class="bar" id="bar"><div class="in">
+  <button class="btn btn-line" id="barSecondary" hidden>Add photos</button>
+  <button class="btn btn-primary" id="barPrimary" disabled>Nothing to review yet</button>
+</div></nav>
 
-<div class="bar"><div class="inner">
-  <button id="parseBtn" disabled>Parse</button>
-  <button class="primary" id="appendBtn" disabled>Append to sheet</button>
-</div></div>
+<div class="toast" id="toast" hidden><span id="toastMsg"></span><button id="toastAct" hidden></button><button class="x" id="toastX" aria-label="Dismiss">✕</button></div>
 
-<script>
-const $ = (id) => document.getElementById(id);
-const state = { cfg: null, sheet: null, images: [], rows: [], busy: false };
-const PRIMARY = ["medication", "strength", "date_filled", "patient_paid", "quantity", "pharmacy_name", "rx_number", "prescriber"];
-const store = {
-  get(k, d) { try { return JSON.parse(localStorage.getItem("rxscan." + k)) ?? d; } catch { return d; } },
-  set(k, v) { try { localStorage.setItem("rxscan." + k, JSON.stringify(v)); } catch {} },
-};
-
-function setStatus(el, msg, kind = "") { el.textContent = msg || ""; el.className = "status " + kind; }
-
-async function api(path, opts = {}) {
-  let r;
-  try { r = await fetch(path, opts); }
-  catch (e) { const err = new Error("You're offline (or the server is unreachable)."); err.offline = true; throw err; }
-  if (r.status === 401) { // session expired: save work, go sign in, come back
-    saveDraft(true);
-    setTimeout(() => location.assign("/login?next=" + encodeURIComponent(location.pathname)), 300);
-    const err = new Error("Signed out. Taking you to sign in…"); err.login = true; throw err;
-  }
-  let body = null;
-  try { body = await r.json(); } catch {}
-  if (!r.ok) throw new Error((body && body.detail) ? (typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail)) : `HTTP ${r.status}`);
-  return body;
-}
-
-/* ---------- Sheet ---------- */
-function renderRecent() {
-  const recent = store.get("recent", []);
-  $("recent").innerHTML = "";
-  recent.forEach((s) => {
-    const c = document.createElement("span");
-    c.className = "chip"; c.textContent = s.title || s.id;
-    c.onclick = () => { $("sheetUrl").value = s.url; loadSheet(s.tab); };
-    $("recent").appendChild(c);
-  });
-}
-
-function showPicker() {
-  const sc = state.cfg.sheets;
-  $("notConnected").classList.toggle("hidden", !!sc.backend);
-  $("listPicker").classList.toggle("hidden", !sc.can_list);
-  $("urlPicker").classList.toggle("hidden", !sc.backend || sc.can_list);
-  $("recent").classList.toggle("hidden", !sc.backend);
-  if (sc.backend === "service_account" && sc.service_account_email) {
-    $("shareHint").innerHTML = "Share the sheet with <code></code> as an Editor.";
-    $("shareHint").querySelector("code").textContent = sc.service_account_email;
-  } else $("shareHint").textContent = "";
-  if (sc.can_list) fillSheetList();
-}
-
-async function fillSheetList() {
-  const sel = $("sheetSelect");
-  sel.innerHTML = '<option value="">Loading your sheets…</option>';
-  try {
-    const { files } = await api("/api/sheets");
-    sel.innerHTML = '<option value="">Choose a sheet…</option>';
-    files.forEach((f) => { const o = document.createElement("option"); o.value = f.id; o.textContent = f.title; sel.appendChild(o); });
-    if (!files.length) sel.innerHTML = '<option value="">No sheets yet. Tap ＋ New sheet</option>';
-  } catch (e) {
-    sel.innerHTML = '<option value="">Couldn\'t load sheets</option>';
-    setStatus($("sheetStatus"), e.message, "err");
-  }
-}
-
-async function newSheet() {
-  const title = prompt("Name for the new sheet:", `Prescriptions ${new Date().getFullYear()}`);
-  if (!title) return;
-  setStatus($("sheetStatus"), "Creating…");
-  $("newSheet").disabled = true;
-  try {
-    const info = await api("/api/sheets/new", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, tab: "Prescriptions" }) });
-    $("sheetUrl").value = info.url;
-    await loadSheet();
-  } catch (e) { setStatus($("sheetStatus"), e.message, "err"); }
-  finally { $("newSheet").disabled = false; }
-}
-
-async function loadSheet(preferTab) {
-  const url = $("sheetUrl").value.trim();
-  if (!url) return setStatus($("sheetStatus"), "Paste a sheet URL first.", "warn");
-  setStatus($("sheetStatus"), "Loading…");
-  $("loadSheet").disabled = true;
-  try {
-    const info = await api("/api/sheet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sheet: url }) });
-    state.sheet = info;
-    $("sheetTitle").textContent = info.title;
-    const sel = $("tab"); sel.innerHTML = "";
-    info.tabs.forEach((t) => { const o = document.createElement("option"); o.value = o.textContent = t; sel.appendChild(o); });
-    const saved = preferTab || store.get("tab:" + info.id) || state.cfg.default_sheet_tab;
-    if (saved && info.tabs.includes(saved)) sel.value = saved;
-    $("sheetPicker").classList.add("hidden");
-    $("sheetChosen").classList.remove("hidden");
-    $("changeSheet").classList.remove("hidden");
-    setStatus($("sheetStatus"), "");
-    remember();
-  } catch (e) {
-    setStatus($("sheetStatus"), e.message, "err");
-  } finally { $("loadSheet").disabled = false; updateButtons(); }
-}
-
-function remember() {
-  if (!state.sheet) return;
-  const tab = $("tab").value;
-  store.set("tab:" + state.sheet.id, tab);
-  store.set("last", state.sheet.url);
-  const recent = store.get("recent", []).filter((s) => s.id !== state.sheet.id);
-  recent.unshift({ id: state.sheet.id, title: state.sheet.title, url: state.sheet.url, tab });
-  store.set("recent", recent.slice(0, 5));
-}
-
-/* ---------- Images ---------- */
-function addFiles(list) {
-  for (const f of list) {
-    if (!f.type.startsWith("image/") && !/\.(heic|heif)$/i.test(f.name)) continue;
-    const name = f.name && f.name !== "image.jpg" ? f.name : `photo-${new Date().toISOString().slice(0,19).replace(/[:T]/g, "")}-${state.images.length + 1}.jpg`;
-    state.images.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), file: f, name, url: URL.createObjectURL(f), status: "new" });
-  }
-  renderThumbs(); updateButtons();
-}
-
-function renderThumbs() {
-  const el = $("thumbs"); el.innerHTML = "";
-  state.images.forEach((im, i) => {
-    const d = document.createElement("div"); d.className = "thumb";
-    const img = document.createElement("img"); img.src = im.url; img.alt = im.name;
-    img.onerror = () => { img.remove(); }; // HEIC may not preview in some browsers; still uploads
-    const x = document.createElement("button"); x.className = "x"; x.textContent = "✕"; x.title = "Remove";
-    x.onclick = () => { URL.revokeObjectURL(im.url); state.images.splice(i, 1); state.rows = state.rows.filter(r => r._imgId !== im.id); renderThumbs(); renderRows(); updateButtons(); };
-    d.append(img, x);
-    const labels = { new: "", queued: "Waiting for connection", parsing: "Parsing…", done: `${im.count} found`, error: "Failed", none: "No Rx found" };
-    if (labels[im.status]) { const b = document.createElement("div"); b.className = "badge"; b.textContent = labels[im.status]; d.appendChild(b); }
-    el.appendChild(d);
-  });
-}
-
-async function parseAll() {
-  if (state.busy) return;
-  const todo = state.images.filter((im) => ["new", "error", "queued"].includes(im.status));
-  if (!todo.length) return;
-  if (!navigator.onLine) {
-    todo.forEach((im) => { im.status = "queued"; });
-    renderThumbs(); updateButtons();
-    return setStatus($("parseStatus"), "Offline. Photos are saved and will be parsed automatically when you're back online.", "warn");
-  }
-  state.busy = true; updateButtons();
-  let failed = 0;
-  for (const [n, im] of todo.entries()) {
-    setStatus($("parseStatus"), `Parsing ${n + 1} of ${todo.length}…`);
-    im.status = "parsing"; renderThumbs();
-    try {
-      const fd = new FormData(); fd.append("file", im.file, im.name);
-      const res = await api("/api/parse", { method: "POST", body: fd });
-      im.count = res.rows.length;
-      im.status = res.rows.length ? "done" : "none";
-      res.rows.forEach((r) => state.rows.push({ ...r, _imgId: im.id }));
-      if (!res.is_prescription_receipt) im.status = "none";
-    } catch (e) {
-      if (e.offline) {
-        state.images.filter((x) => ["new", "parsing", "error"].includes(x.status)).forEach((x) => { x.status = "queued"; });
-        setStatus($("parseStatus"), "Lost connection. Remaining photos are saved and will be parsed when you're back online.", "warn");
-        renderThumbs(); failed++; break;
-      }
-      im.status = "error"; failed++;
-      setStatus($("parseStatus"), `${im.name}: ${e.message}`, "err");
-    }
-    renderThumbs(); renderRows(); saveDraft(true);
-  }
-  state.busy = false;
-  if (!failed) setStatus($("parseStatus"), `Found ${state.rows.length} prescription${state.rows.length === 1 ? "" : "s"}.`, "ok");
-  updateButtons();
-}
-
-/* ---------- Review ---------- */
-function field(row, f, full) {
-  const wrap = document.createElement("div"); if (full) wrap.className = "full";
-  const id = "f" + Math.random().toString(36).slice(2);
-  const l = document.createElement("label"); l.textContent = f.header; l.htmlFor = id;
-  const inp = document.createElement("input"); inp.id = id; inp.value = row[f.key] ?? "";
-  inp.classList.toggle("empty", !inp.value);
-  inp.oninput = () => { row[f.key] = inp.value; saveDraft(); inp.classList.toggle("empty", !inp.value); if (PRIMARY.slice(0,4).includes(f.key)) updateHead(row); };
-  wrap.append(l, inp); return wrap;
-}
-
-function headText(row) {
-  return {
-    title: [row.medication, row.strength].filter(Boolean).join(" ") || "Untitled prescription",
-    sub: [row.date_filled, row.patient_paid ? "$" + row.patient_paid.replace(/^\$/, "") : "", row.source_file].filter(Boolean).join(" · "),
-  };
-}
-function updateHead(row) { const h = headText(row); row._t.textContent = h.title; row._s.textContent = h.sub; }
-
-function renderRows() {
-  $("reviewSec").classList.toggle("hidden", !state.rows.length);
-  const el = $("rows"); el.innerHTML = "";
-  const fields = state.cfg.fields;
-  state.rows.forEach((row, i) => {
-    const card = document.createElement("div"); card.className = "rx";
-    const head = document.createElement("div"); head.className = "rx-head";
-    const t = document.createElement("div");
-    row._t = document.createElement("div"); row._t.className = "rx-title";
-    row._s = document.createElement("div"); row._s.className = "rx-sub";
-    t.append(row._t, row._s); updateHead(row);
-    const del = document.createElement("button"); del.className = "link"; del.textContent = "Remove";
-    del.onclick = () => { state.rows.splice(i, 1); renderRows(); updateButtons(); };
-    head.append(t, del);
-    const g = document.createElement("div"); g.className = "grid";
-    fields.filter((f) => PRIMARY.includes(f.key)).sort((a, b) => PRIMARY.indexOf(a.key) - PRIMARY.indexOf(b.key))
-      .forEach((f) => g.appendChild(field(row, f, f.key === "pharmacy_name")));
-    const det = document.createElement("details");
-    det.innerHTML = "<summary>All fields</summary>";
-    const g2 = document.createElement("div"); g2.className = "grid";
-    fields.filter((f) => !PRIMARY.includes(f.key)).forEach((f) => g2.appendChild(field(row, f, ["pharmacy_address", "notes"].includes(f.key))));
-    det.appendChild(g2);
-    card.append(head, g, det);
-    el.appendChild(card);
-  });
-}
-
-/* ---------- Append ---------- */
-async function append() {
-  if (!state.sheet || !state.rows.length) return;
-  state.busy = true; updateButtons();
-  const keys = state.cfg.all_keys;
-  const storage = state.cfg.receipts?.storage || "off";
-  try {
-    // 1. Save a copy of each receipt photo once (retries reuse the saved copy).
-    if (storage !== "off") {
-      const used = state.images.filter((im) => state.rows.some((r) => r._imgId === im.id) && !im.receiptUrl);
-      for (const [n, im] of used.entries()) {
-        setStatus($("appendStatus"), `Saving receipt ${n + 1} of ${used.length}${storage === "drive" ? " to Drive" : ""}…`);
-        const first = state.rows.find((r) => r._imgId === im.id) || {};
-        const fd = new FormData();
-        fd.append("file", im.file, im.name);
-        fd.append("date", first.date_filled || "");
-        fd.append("pharmacy", first.pharmacy_name || "");
-        fd.append("medication", state.rows.filter((r) => r._imgId === im.id).map((r) => r.medication).filter(Boolean).join(", "));
-        const res = await api("/api/receipts", { method: "POST", body: fd });
-        im.receiptUrl = res.url || "";
-        saveDraft(true);
-      }
-    }
-    state.rows.forEach((r) => { const im = state.images.find((x) => x.id === r._imgId); r.receipt_url = im?.receiptUrl || ""; });
-    // 2. Append the rows.
-    setStatus($("appendStatus"), "Appending…");
-    const rows = state.rows.map((r) => Object.fromEntries(keys.map((k) => [k, r[k] ?? ""])));
-    const res = await api("/api/append", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sheet: state.sheet.id, tab: $("tab").value, rows }) });
-    let msg = `Added ${res.appended} row${res.appended === 1 ? "" : "s"} to “${$("tab").value}”.`;
-    if (res.created_header) msg += " Header row created.";
-    if (res.unmatched_columns?.length) msg += ` Left blank: ${res.unmatched_columns.join(", ")}.`;
-    if (storage === "drive") msg += ` Receipts saved to ${state.cfg.receipts.folder}.`;
-    else if (storage === "local") msg += " Receipts saved on the server.";
-    $("appendStatus").innerHTML = "";
-    setStatus($("appendStatus"), msg, "ok");
-    const a = document.createElement("a"); a.href = res.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = " Open sheet ↗";
-    $("appendStatus").appendChild(a);
-    state.images.forEach((im) => URL.revokeObjectURL(im.url));
-    state.images = []; state.rows = [];
-    renderThumbs(); renderRows(); setStatus($("parseStatus"), "");
-    remember();
-  } catch (e) {
-    setStatus($("appendStatus"), e.offline ? "You're offline. Your rows are saved on this device; append again when you're back online." : e.message, "err");
-  } finally { state.busy = false; updateButtons(); }
-}
-
-function updateButtons() {
-  const pending = state.images.some((im) => ["new", "error", "queued"].includes(im.status));
-  $("parseBtn").disabled = state.busy || !pending;
-  $("parseBtn").textContent = state.images.some(im => im.status === "error") && !state.images.some(im => im.status === "new") ? "Retry failed" : "Parse";
-  $("appendBtn").disabled = state.busy || !state.sheet || !state.rows.length || pending || !navigator.onLine;
-  $("appendBtn").textContent = state.rows.length ? `Append ${state.rows.length} to sheet` : "Append to sheet";
-  saveDraft();
-}
-
-/* ---------- Draft persistence (IndexedDB): photos + rows survive the app being closed ---------- */
-let saveTimer = null, restoring = false;
-function saveDraft(now) {
-  if (restoring || !self.RxDB) return;
-  clearTimeout(saveTimer);
-  const run = async () => {
-    const draft = {
-      images: state.images.map(({ id, name, file, status, count, receiptUrl }) => ({ id, name, blob: file, status: status === "parsing" ? "new" : status, count, receiptUrl })),
-      rows: state.rows.map((r) => { const { _t, _s, ...rest } = r; return rest; }),
-    };
-    try {
-      if (!draft.images.length && !draft.rows.length) await RxDB.del("draft"); else await RxDB.set("draft", draft);
-    } catch {}
-    const n = draft.rows.length + draft.images.filter((i) => ["new", "queued", "error"].includes(i.status)).length;
-    try { n ? navigator.setAppBadge?.(n) : navigator.clearAppBadge?.(); } catch {}
-  };
-  if (now) run(); else saveTimer = setTimeout(run, 150);
-}
-// iOS may kill a backgrounded PWA at any time: save the moment we're hidden.
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") saveDraft(true);
-  else retryQueued();
-});
-window.addEventListener("pagehide", () => saveDraft(true));
-
-async function restoreDraft() {
-  if (!self.RxDB) return;
-  restoring = true;
-  try {
-    const d = await RxDB.get("draft");
-    if (d && (d.images?.length || d.rows?.length)) {
-      state.images = (d.images || []).filter((i) => i.blob).map((i) => ({ ...i, file: i.blob, url: URL.createObjectURL(i.blob) }));
-      state.rows = d.rows || [];
-      renderThumbs(); renderRows();
-      const parts = [];
-      if (state.images.length) parts.push(`${state.images.length} photo${state.images.length === 1 ? "" : "s"}`);
-      if (state.rows.length) parts.push(`${state.rows.length} row${state.rows.length === 1 ? "" : "s"} to review`);
-      setStatus($("parseStatus"), `Restored ${parts.join(" and ")} from last time.`, "");
-    }
-  } catch {}
-  restoring = false;
-  updateButtons();
-}
-
-async function takeInbox() { // photos shared in from the Android share sheet
-  if (!self.RxDB) return;
-  try {
-    const items = await RxDB.inboxTake();
-    if (items.length) {
-      addFiles(items.map((it) => new File([it.blob], it.name, { type: it.type || it.blob.type || "image/jpeg" })));
-      toast(`Added ${items.length} shared photo${items.length === 1 ? "" : "s"}.`);
-    }
-  } catch {}
-}
-
-/* ---------- PWA: install, updates, connectivity ---------- */
-function toast(msg, actLabel, act) {
-  $("toastMsg").textContent = msg;
-  $("toastAct").classList.toggle("hidden", !actLabel);
-  $("toastAct").textContent = actLabel || "";
-  $("toastAct").onclick = () => { $("toast").classList.add("hidden"); act && act(); };
-  $("toast").classList.remove("hidden");
-  clearTimeout(toast._t);
-  if (!actLabel) toast._t = setTimeout(() => $("toast").classList.add("hidden"), 4000);
-}
-$("toastClose").onclick = () => $("toast").classList.add("hidden");
-
-let installEvt = null;
-window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvt = e; $("installBtn").classList.remove("hidden"); });
-window.addEventListener("appinstalled", () => { installEvt = null; $("installBtn").classList.add("hidden"); });
-$("installBtn").onclick = async () => {
-  if (!installEvt) return;
-  installEvt.prompt();
-  await installEvt.userChoice.catch(() => {});
-  installEvt = null; $("installBtn").classList.add("hidden");
-};
-function maybeIosHint() {
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  const standalone = navigator.standalone || matchMedia("(display-mode: standalone)").matches;
-  if (ios && !standalone && !store.get("iosHint", false)) {
-    toast("Install RxScan: tap Share, then “Add to Home Screen”.", "Got it", () => store.set("iosHint", true));
-  }
-}
-
-// Retry queued photos: the "online" event alone misses cases like "phone has signal but the server
-// (or the Pangolin tunnel) is unreachable", so also poll while anything is waiting.
-function retryQueued() {
-  if (navigator.onLine && !state.busy && state.images.some((im) => im.status === "queued")) parseAll();
-}
-setInterval(retryQueued, 30000);
-
-function setOnline() {
-  const on = navigator.onLine;
-  $("offlinePill").classList.toggle("hidden", on);
-  if (on && state.images.some((im) => im.status === "queued")) parseAll();
-  updateButtons();
-}
-window.addEventListener("online", setOnline);
-window.addEventListener("offline", setOnline);
-
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/sw.js", { scope: "/" }).then((reg) => {
-    const offer = (w) => toast("A new version of RxScan is ready.", "Reload", () => w.postMessage("skipWaiting"));
-    if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
-    reg.addEventListener("updatefound", () => {
-      const w = reg.installing;
-      w && w.addEventListener("statechange", () => { if (w.state === "installed" && navigator.serviceWorker.controller) offer(w); });
-    });
-    setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
-  }).catch(() => {});
-  let reloading = false;
-  navigator.serviceWorker.addEventListener("controllerchange", () => { if (!reloading) { reloading = true; location.reload(); } });
-}
-navigator.storage?.persist?.().catch(() => {});
-
-
-/* ---------- Settings ---------- */
-const SUGGEST = {
-  gemini: [["gemini-3.8-flash", "Recommended"], ["gemini-3.5-flash-lite", "Cheapest"], ["gemini-4-argon", "Most capable"]],
-  anthropic: [["claude-sonnet-5-5", "Recommended"], ["claude-haiku-5-5", "Cheaper"]],
-  ollama: [["qwen2.5vl:7b", ""], ["gemma3:12b", ""], ["llama3.2-vision", ""]],
-};
-const SKEYS = ["gemini_api_key","gemini_model","anthropic_api_key","anthropic_model","ollama_url","ollama_model",
-               "default_sheet_url","default_sheet_tab","max_image_edge","add_missing_columns","receipt_storage","receipts_year_folders","receipts_local_dir"];
-let sProvider = "gemini", sData = null;
-
-function setProvider(p) {
-  sProvider = p;
-  document.querySelectorAll("#providerSeg button").forEach(b => b.classList.toggle("on", b.dataset.prov === p));
-  document.querySelectorAll("[data-p]").forEach(d => d.classList.toggle("hidden", d.dataset.p !== p));
-}
-
-function srcLabel(src) { return src === "app" ? "· saved in app" : src === "env" ? "· from .env" : ""; }
-
-async function openSettings() {
-  $("settingsSec").classList.remove("hidden");
-  window.scrollTo({ top: 0, behavior: "smooth" });
-  setStatus($("settingsStatus"), "Loading…");
-  try {
-    sData = await api("/api/settings");
-    const st = sData.settings;
-    $("providerSeg").innerHTML = "";
-    sData.providers.forEach(p => {
-      const b = document.createElement("button"); b.dataset.prov = p;
-      b.textContent = { gemini: "Gemini", anthropic: "Claude", ollama: "Ollama" }[p] || p;
-      b.onclick = () => setProvider(p); $("providerSeg").appendChild(b);
-    });
-    setProvider(st.vision_provider.value);
-    for (const k of SKEYS) {
-      const el = $("s_" + k), v = st[k];
-      if (el.type === "checkbox") el.checked = !!v.value;
-      else if ("set" in v) { el.value = ""; el.placeholder = v.set ? `Saved (${v.hint}). Leave blank to keep.` : el.placeholder.replace(/^Saved.*$/, "Paste key"); }
-      else el.value = v.value ?? "";
-      const s = $("src_" + k); if (s) s.textContent = srcLabel(v.source);
-    }
-    document.querySelectorAll("[data-suggest]").forEach(box => {
-      const p = box.dataset.suggest; box.innerHTML = "";
-      SUGGEST[p].forEach(([id, tag]) => {
-        const c = document.createElement("span"); c.className = "chip"; c.textContent = tag ? `${id} · ${tag}` : id;
-        c.onclick = () => { $("s_" + p + "_model").value = id; }; box.appendChild(c);
-      });
-    });
-    $("mockNote").classList.toggle("hidden", !sData.mock);
-    $("s_apps_script_url").value = st.apps_script_url.value || "";
-    $("s_sheets_backend").value = st.sheets_backend.value;
-    renderGsStatus();
-    renderFolderBoxes();
-    if (state.cfg?.sheets?.backend === "apps_script") api("/api/settings/bridge").then(({ bridge }) => {
-      if (bridge?.outdated) {
-        $("gsStatus").className = "status warn";
-        $("gsStatus").textContent = "Your bridge script needs an update to save receipts to Drive. Copy the setup script, paste it over the old code, then Deploy → Manage deployments → ✏️ → Version: New version → Deploy. The URL stays the same.";
-        $("gsSetup").classList.remove("hidden"); $("gsShowSteps").classList.add("hidden");
-      }
-    }).catch(() => {});
-    $("pwNote").textContent = sData.password_protected ? "" :
-      "Sign-in is off. Set APP_PASSWORD (and optionally APP_USERNAME) in .env to require it.";
-    $("logoutForm").classList.toggle("hidden", !sData.password_protected);
-    $("whoami").textContent = sData.username ? `(${sData.username})` : "";
-    setStatus($("settingsStatus"), "");
-  } catch (e) { setStatus($("settingsStatus"), e.message, "err"); }
-}
-
-function probeBody() {
-  return { provider: sProvider, model: ($("s_" + sProvider + "_model").value || "").trim(),
-           api_key: sProvider === "ollama" ? "" : $("s_" + sProvider + "_api_key").value.trim(),
-           url: sProvider === "ollama" ? $("s_ollama_url").value.trim() : "" };
-}
-
-async function loadModels(p) {
-  setProvider(p);
-  setStatus($("settingsStatus"), "Fetching models…");
-  try {
-    const res = await api("/api/settings/models", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(probeBody()) });
-    const dl = $("dl_" + p); dl.innerHTML = "";
-    res.models.forEach(m => { const o = document.createElement("option"); o.value = m.id; o.label = m.name; dl.appendChild(o); });
-    setStatus($("settingsStatus"), `${res.models.length} models available. Tap the Model box to pick one.`, "ok");
-  } catch (e) { setStatus($("settingsStatus"), e.message, "err"); }
-}
-
-async function testConn() {
-  setStatus($("settingsStatus"), "Testing…");
-  try {
-    const res = await api("/api/settings/test", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(probeBody()) });
-    setStatus($("settingsStatus"), res.message, res.message.startsWith("Connected.") ? "ok" : "warn");
-  } catch (e) { setStatus($("settingsStatus"), e.message, "err"); }
-}
-
-async function saveSettings() {
-  // Only send what changed, so untouched values keep following .env
-  const st = sData.settings, values = {};
-  if (sProvider !== st.vision_provider.value) values.vision_provider = sProvider;
-  for (const k of SKEYS) {
-    const el = $("s_" + k);
-    if ("set" in st[k]) { if (el.value.trim()) values[k] = el.value.trim(); continue; }
-    const v = el.type === "checkbox" ? el.checked : el.value.trim();
-    if (String(v) !== String(st[k].value ?? "")) values[k] = v;
-  }
-  if (!Object.keys(values).length) return setStatus($("settingsStatus"), "No changes.", "");
-  setStatus($("settingsStatus"), "Saving…");
-  try {
-    await api("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ values }) });
-    state.cfg = await api("/api/config");
-    $("vision").textContent = `${state.cfg.vision.provider} · ${state.cfg.vision.model}`;
-    await openSettings();
-    setStatus($("settingsStatus"), "Saved.", "ok");
-  } catch (e) { setStatus($("settingsStatus"), e.message, "err"); }
-}
-
-function renderGsStatus() {
-  const sc = state.cfg?.sheets || {};
-  const el = $("gsStatus");
-  if (sc.backend === "apps_script") { el.className = "connected"; el.textContent = "✓ Connected through Apps Script"; }
-  else if (sc.backend === "service_account") { el.className = "connected"; el.textContent = "✓ Using the service account key"; }
-  else { el.className = "muted"; el.textContent = "Not connected yet. About 2 minutes, one time:"; }
-  $("gsSetup").classList.toggle("hidden", !!sc.backend);
-  $("gsShowSteps").classList.toggle("hidden", !sc.backend);
-}
-$("gsShowSteps").onclick = () => { $("gsSetup").classList.remove("hidden"); $("gsShowSteps").classList.add("hidden"); };
-
-async function copyScript() {
-  setStatus($("settingsStatus"), "Preparing script…");
-  try {
-    const { script } = await api("/api/settings/apps-script", { method: "POST" });
-    $("scriptText").value = script;
-    $("scriptBox").classList.remove("hidden");
-    let ok = false;
-    try { await navigator.clipboard.writeText(script); ok = true; } catch {}
-    if (!ok) { // clipboard API needs HTTPS; fall back
-      $("scriptBox").open = true; $("scriptText").focus(); $("scriptText").select();
-      try { ok = document.execCommand("copy"); } catch {}
-    }
-    setStatus($("settingsStatus"), ok ? "Script copied. Now do step 2." : "Select all the text in the box and copy it.", ok ? "ok" : "warn");
-  } catch (e) { setStatus($("settingsStatus"), e.message, "err"); }
-}
-
-async function connectSheets() {
-  const url = $("s_apps_script_url").value.trim();
-  if (!url) return setStatus($("settingsStatus"), "Paste the Web app URL first.", "warn");
-  setStatus($("settingsStatus"), "Connecting…");
-  $("connectSheets").disabled = true;
-  try {
-    const t = await api("/api/settings/sheets-test", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }) });
-    await api("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ values: { apps_script_url: url } }) });
-    state.cfg = await api("/api/config");
-    sData = await api("/api/settings");
-    renderGsStatus(); showPicker(); renderFolderBoxes();
-    setStatus($("settingsStatus"), t.message + " Close Settings to pick a sheet.", t.outdated ? "warn" : "ok");
-  } catch (e) { setStatus($("settingsStatus"), e.message, "err"); }
-  finally { $("connectSheets").disabled = false; }
-}
-
-/* ---------- Receipt folder picker ---------- */
-let fCur = null;
-function effectiveStorage() {
-  const v = $("s_receipt_storage").value;
-  if (v !== "auto") return v;
-  return state.cfg?.sheets?.backend === "apps_script" ? "drive" : "local";
-}
-function renderFolderBoxes() {
-  const st = effectiveStorage();
-  $("driveFolderBox").classList.toggle("hidden", st !== "drive");
-  $("localFolderBox").classList.toggle("hidden", st !== "local");
-  $("s_receipts_year_folders").closest("label").classList.toggle("hidden", st === "off");
-  $("folderPath").textContent = state.cfg?.receipts?.folder || "My Drive › RxScan Receipts";
-}
-$("s_receipt_storage").addEventListener("change", renderFolderBoxes);
-
-async function browse(parent) {
-  $("crumbs").textContent = "Loading…"; $("flist").innerHTML = "";
-  $("fMyDrive").classList.toggle("on", parent !== "shared");
-  $("fShared").classList.toggle("on", parent === "shared");
-  try {
-    const res = await api("/api/drive/folders?parent=" + encodeURIComponent(parent));
-    fCur = res.folder;
-    $("crumbs").textContent = fCur.path;
-    if (!res.children.length) $("flist").innerHTML = '<div class="empty">No folders here.</div>';
-    res.children.forEach((c) => {
-      const b = document.createElement("button"); b.textContent = "📁 " + c.name;
-      b.onclick = () => browse(c.id); $("flist").appendChild(b);
-    });
-    $("fUp").disabled = !fCur.parentId;
-    $("fNew").disabled = fCur.id === "shared";
-    $("fUse").disabled = fCur.id === "shared";
-    $("fUse").textContent = fCur.id === "shared" ? "Open a folder to use it" : `Use “${fCur.name}”`;
-  } catch (e) {
-    $("crumbs").textContent = "";
-    setStatus($("settingsStatus"), e.message, "err");
-  }
-}
-
-async function useFolder(f) {
-  try {
-    await api("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ values: { receipts_folder_id: f.id, receipts_folder_path: f.path } }) });
-    state.cfg = await api("/api/config"); sData = await api("/api/settings");
-    renderFolderBoxes(); $("folderBrowser").classList.add("hidden");
-    setStatus($("settingsStatus"), `Receipts will be saved to ${f.path}.`, "ok");
-  } catch (e) { setStatus($("settingsStatus"), e.message, "err"); }
-}
-
-$("chooseFolder").onclick = () => {
-  const open = $("folderBrowser").classList.toggle("hidden");
-  if (!open) browse(sData?.settings?.receipts_folder_id?.value || "root");
-};
-$("fMyDrive").onclick = () => browse("root");
-$("fShared").onclick = () => browse("shared");
-$("fUp").onclick = () => fCur?.parentId && browse(fCur.parentId);
-$("fUse").onclick = () => fCur && fCur.id !== "shared" && useFolder(fCur);
-$("fNew").onclick = async () => {
-  const name = prompt("New folder name:", "RxScan Receipts");
-  if (!name || !fCur) return;
-  try {
-    const f = await api("/api/drive/folders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ parent: fCur.id, name }) });
-    await browse(f.id);
-  } catch (e) { setStatus($("settingsStatus"), e.message, "err"); }
-};
-$("fLinkUse").onclick = async () => {
-  const link = $("fLink").value.trim();
-  if (!link) return;
-  try {
-    const f = await api("/api/drive/folder-info", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ folder: link }) });
-    $("fLink").value = ""; await useFolder(f);
-  } catch (e) { setStatus($("settingsStatus"), e.message, "err"); }
-};
-$("fReset").onclick = async () => {
-  try {
-    await api("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ values: {}, clear: ["receipts_folder_id", "receipts_folder_path"] }) });
-    state.cfg = await api("/api/config"); renderFolderBoxes(); $("folderBrowser").classList.add("hidden");
-    setStatus($("settingsStatus"), "Receipts will be saved to My Drive › RxScan Receipts.", "ok");
-  } catch (e) { setStatus($("settingsStatus"), e.message, "err"); }
-};
-
-$("copyScript").onclick = copyScript;
-$("connectSheets").onclick = connectSheets;
-$("s_sheets_backend").onchange = async (e) => {
-  try {
-    await api("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ values: { sheets_backend: e.target.value } }) });
-    state.cfg = await api("/api/config"); renderGsStatus(); showPicker(); renderFolderBoxes();
-    setStatus($("settingsStatus"), "Saved.", "ok");
-  } catch (err) { setStatus($("settingsStatus"), err.message, "err"); }
-};
-$("openSettings").onclick = () => $("settingsSec").classList.contains("hidden") ? openSettings() : $("settingsSec").classList.add("hidden");
-$("closeSettings").onclick = () => $("settingsSec").classList.add("hidden");
-document.querySelectorAll("[data-load]").forEach(b => b.onclick = () => loadModels(b.dataset.load));
-$("testConn").onclick = testConn;
-$("saveSettings").onclick = saveSettings;
-
-/* ---------- Init ---------- */
-$("takePhoto").onclick = () => $("cam").click();
-$("pickFiles").onclick = () => $("files").click();
-$("cam").onchange = (e) => { addFiles(e.target.files); e.target.value = ""; };
-$("files").onchange = (e) => { addFiles(e.target.files); e.target.value = ""; };
-$("parseBtn").onclick = parseAll;
-$("appendBtn").onclick = append;
-$("loadSheet").onclick = () => loadSheet();
-$("sheetUrl").onkeydown = (e) => { if (e.key === "Enter") loadSheet(); };
-$("tab").onchange = remember;
-$("changeSheet").onclick = () => { $("sheetPicker").classList.remove("hidden"); $("sheetChosen").classList.add("hidden"); $("changeSheet").classList.add("hidden"); state.sheet = null; renderRecent(); showPicker(); updateButtons(); };
-$("sheetSelect").onchange = (e) => { if (e.target.value) { $("sheetUrl").value = e.target.value; loadSheet(); } };
-$("newSheet").onclick = newSheet;
-$("showUrl").onclick = () => $("urlPicker").classList.toggle("hidden");
-$("connectBtn").onclick = async () => { await openSettings(); $("gsAnchor").scrollIntoView({ behavior: "smooth" }); };
-$("addRow").onclick = () => { state.rows.push({ source_file: "manual" }); renderRows(); updateButtons(); };
-document.addEventListener("paste", (e) => { const fs = [...(e.clipboardData?.files || [])]; if (fs.length) addFiles(fs); });
-
-(async () => {
-  try { state.cfg = await api("/api/config"); store.set("cfg", state.cfg); }
-  catch (e) {
-    state.cfg = store.get("cfg", null);
-    if (!state.cfg) { setStatus($("sheetStatus"), "Can't reach the server: " + e.message, "err"); return; }
-  }
-  await restoreDraft();
-  setOnline();
-  $("vision").textContent = `${state.cfg.vision.provider} · ${state.cfg.vision.model}`;
-  renderRecent();
-  showPicker();
-  if (navigator.onLine) try { // first run: open Settings if the chosen provider has no key yet
-    const s = (await api("/api/settings")).settings, p = s.vision_provider.value;
-    if (state.cfg.vision.provider !== "mock" && p !== "ollama" && !s[p + "_api_key"].set) {
-      await openSettings(); setStatus($("settingsStatus"), `Add your ${p === "gemini" ? "Gemini" : "Anthropic"} API key to get started.`, "warn");
-    }
-  } catch {}
-  const last = store.get("last", null) || state.cfg.default_sheet_url;
-  if (last && state.cfg.sheets.backend && navigator.onLine) { $("sheetUrl").value = last; loadSheet(); }
-  updateButtons();
-  const params = new URLSearchParams(location.search);
-  await takeInbox();
-  if (params.get("action") === "camera") { $("takePhoto").focus(); try { $("cam").click(); } catch {} }
-  if (params.has("share") || params.has("action") || params.has("source")) history.replaceState(null, "", "/");
-  setTimeout(maybeIosHint, 1500);
-})();
-</script>
+<style>.hide-desktop{} @media (min-width:900px){.hide-desktop{display:none!important}} @media (max-width:899px){.hide-phone{display:none!important}}</style>
+<script src="/static/app.js"></script>
 </body>
 </html>

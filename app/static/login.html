@@ -5,48 +5,118 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="RxScan">
-<meta name="theme-color" content="#f5f5f2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121314" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#15304A">
 <meta name="robots" content="noindex">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png">
 <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+<link rel="preload" href="/static/fonts/barlow-condensed-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/rx.css">
 <title>Sign in · RxScan</title>
 <style>
-  :root { --bg:#f5f5f2; --card:#fff; --ink:#1c1d1f; --muted:#6b6f76; --line:#e2e2dc; --accent:#0f766e; --accent-ink:#fff; --err:#b91c1c; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#121314; --card:#1c1d1f; --ink:#ececea; --muted:#9a9ea5; --line:#2c2e31; --accent:#2dd4bf; --accent-ink:#062b27; } }
-  * { box-sizing: border-box; }
-  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 16px;
-         font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
-  form { width:100%; max-width:360px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:24px 20px; }
-  .brand { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
-  .brand img { width:48px; height:48px; border-radius:11px; }
-  h1 { font-size:22px; margin:0; letter-spacing:-.01em; } .brand p { margin:2px 0 0; color:var(--muted); font-size:13px; }
-  label { display:block; font-size:12px; color:var(--muted); margin:12px 0 4px; }
-  input { width:100%; font:inherit; padding:12px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); }
-  input:focus { outline:2px solid var(--accent); outline-offset:-1px; }
-  button { width:100%; margin-top:18px; font:inherit; font-weight:650; border:0; border-radius:10px; padding:13px; background:var(--accent); color:var(--accent-ink); cursor:pointer; }
-  .err { color:var(--err); font-size:14px; margin-top:12px; min-height:1em; }
+  /* phone: stacked; desktop: split (same structure as the mockups) */
+  /* phone: light, like the mockup: headline, one sample label, then the Google button */
+  .signin-web { display: flex; flex-direction: column; min-height: 100vh; }
+  .signin-web .art { background: var(--counter); color: var(--ink); padding: 28px 22px 8px; }
+  .signin-web .art .brand { color: var(--ink); }
+  .signin-web .art h1 { color: var(--ink); font-size: 44px; margin: 22px 0 12px; max-width: 8em; order: 1; }
+  .signin-web .art p { color: var(--ink-2); font-size: 17px; order: 2; }
+  .signin-web .stackart { position: static; width: auto; max-width: 320px; order: 3; margin: 18px 0 4px; }
+  .signin-web .stackart .rx:first-child { display: none; }
+  .signin-web .stackart .rx:last-child { margin-top: 0; transform: rotate(-1.5deg); }
+  .signin-web .stackart .rx-drug { font-size: var(--t-2xl); }
+  .signin-web .art { display: flex; flex-direction: column; }
+  .signin-web .art .brandrow { order: 0; }
+  .signin-web .panel { flex: 1; justify-content: flex-start; padding: 18px 22px calc(28px + env(safe-area-inset-bottom)); background: var(--counter); }
+  .signin-web .panel h2 { display: none; }
+  .signin-web .panel .lede { margin-bottom: 18px; }
+  .pwform { display: grid; gap: 10px; max-width: 380px; margin-top: 8px; }
+  .pwform input { border: 1px solid var(--rule); background: var(--field); border-radius: 10px; padding: 12px; }
+  .msg { max-width: 380px; margin: 0 0 16px; }
+  .msg:empty { display: none; }
+  .linkbtn { border: 0; background: none; color: var(--ink-2); font-size: var(--t-sm); padding: 14px 0 0; text-decoration: underline; cursor: pointer; text-align: left; }
+  @media (min-width: 900px) {
+    .signin-web .art { background: var(--hero); color: var(--hero-ink); display: flex; }
+    .signin-web .art .brand, .signin-web .art h1 { color: var(--hero-ink); }
+    .signin-web .art p { color: color-mix(in srgb, var(--hero-ink) 75%, transparent); }
+    .signin-web .art h1, .signin-web .art p, .signin-web .stackart { order: initial; }
+    .signin-web .stackart { position: absolute; right: 56px; top: 88px; width: 300px; max-width: none; margin: 0; }
+    .signin-web .stackart .rx:first-child { display: block; }
+    .signin-web .stackart .rx:last-child { transform: rotate(-4deg); margin-top: -210px; }
+    .signin-web .stackart .rx-drug { font-size: var(--t-3xl); }
+    .signin-web .panel { background: var(--label); }
+    .signin-web .panel h2 { display: block; }
+    .signin-web { display: grid; grid-template-columns: 1.1fr 1fr; }
+    .signin-web .art { padding: 56px 64px; }
+    .signin-web .art h1 { font-size: 64px; margin: auto 0 18px; max-width: 7em; }
+    .signin-web .stackart { display: block; }
+    .signin-web .panel { justify-content: center; padding: 56px 72px; }
+  }
 </style>
 </head>
 <body>
-<form method="post" action="/login" autocomplete="on">
-  <div class="brand"><img src="/static/icons/icon-192.png" alt=""><div><h1>RxScan</h1><p>Sign in to continue</p></div></div>
-  <label for="username">Username</label>
-  <input id="username" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
-  <label for="password">Password</label>
-  <input id="password" name="password" type="password" autocomplete="current-password" required>
-  <input type="hidden" name="next" id="next" value="/">
-  <button type="submit">Sign in</button>
-  <div class="err" id="err" role="alert"></div>
-</form>
+<div class="signin-web">
+  <section class="art">
+    <div class="brandrow"><div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z" fill="#fff"/></svg></div><span class="brand">RxScan</span></div>
+    <div class="stackart" aria-hidden="true">
+      <article class="rx"><div class="rx-band"><b>Rx 0098817</b><span>Filled</span><span class="date">Nov 18</span></div><div class="rx-body"><div class="rx-drug">Lisinopril</div><div class="rx-strength">10 mg tablet</div><div class="rx-grid"><div><div class="k">Quantity</div><div class="v">30</div></div><div><div class="k">Days</div><div class="v">30</div></div><div><div class="k">Refills</div><div class="v">5</div></div></div><div class="rx-who"><span><strong>CVS Pharmacy #1234</strong></span></div><div class="rx-pay"><span class="k">You paid</span><span><div class="v">$4.00</div></span></div></div></article>
+      <article class="rx"><div class="rx-band"><b>Rx 0123456</b><span>Filled</span><span class="date">Nov 18</span></div><div class="rx-body"><div class="rx-drug">Atorvastatin</div><div class="rx-strength">20 mg tablet</div><div class="rx-grid"><div><div class="k">Quantity</div><div class="v">90</div></div><div><div class="k">Days</div><div class="v">90</div></div><div><div class="k">Refills</div><div class="v">3</div></div></div><div class="rx-who"><span><strong>CVS Pharmacy #1234</strong></span></div><div class="rx-pay"><span class="k">You paid</span><span><div class="v">$10.00</div><div class="sub">Retail $64.99</div></span></div></div></article>
+    </div>
+    <h1>Snap the receipt. Skip the typing.</h1>
+    <p>RxScan reads your pharmacy receipts and adds each prescription to your own Google Sheet, with the photo saved alongside.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Sign in</h2>
+    <div class="notice wait msg" id="msg" role="alert"></div>
+
+    <div id="googleBox">
+      <p class="lede">Use the Google account the admin added for you.</p>
+      <a class="btn btn-google" id="googleBtn" href="/auth/google/start">
+        <svg class="g" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+        Sign in with Google</a>
+      <p class="fine" style="text-align:left;max-width:380px">RxScan can see only the sheet and folder it creates or that you pick. Nothing else in your Drive.</p>
+      <button class="linkbtn" id="showPw" type="button">Use the admin password instead</button>
+    </div>
+
+    <form method="post" action="/login" class="pwform" id="pwForm" hidden>
+      <p class="lede" id="pwLede" style="margin:0 0 4px">Admin password sign-in.</p>
+      <input name="username" id="username" autocomplete="username" autocapitalize="none" placeholder="Username" aria-label="Username" required>
+      <input name="password" id="password" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required>
+      <input type="hidden" name="next" id="next" value="/">
+      <button class="btn btn-primary" type="submit">Sign in</button>
+      <button class="linkbtn" id="showGoogle" type="button">Sign in with Google instead</button>
+    </form>
+  </section>
+</div>
 <script>
+  const GOOGLE_READY = __GOOGLE_READY__;
   const q = new URLSearchParams(location.search);
-  if (q.get("next")) document.getElementById("next").value = q.get("next");
-  const msgs = { "1": "Wrong username or password.", "429": "Too many attempts. Try again in 15 minutes.", "out": "" };
-  document.getElementById("err").textContent = msgs[q.get("e")] || "";
-  document.getElementById(q.get("u") ? "password" : "username").focus();
-  if (q.get("u")) document.getElementById("username").value = q.get("u");
+  const $ = (id) => document.getElementById(id);
+  const next = q.get("next") || "/";
+  $("next").value = next;
+  $("googleBtn").href = "/auth/google/start?next=" + encodeURIComponent(next);
+  const msgs = {
+    "1": "Wrong username or password.",
+    "429": "Too many attempts. Try again in 15 minutes.",
+    notallowed: `${q.get("email") || "That account"} isn't on RxScan's list yet. Ask the admin to add it under People, then sign in again.`,
+    cancelled: "Sign-in was cancelled. Try again when you're ready.",
+    state: "That sign-in link expired. Start again.",
+    nogoogle: "Google sign-in isn't set up yet. Use the admin password.",
+    google: q.get("m") || "Google sign-in didn't work. Try again.",
+  };
+  const e = q.get("e");
+  if (msgs[e]) $("msg").textContent = msgs[e];
+  function showPw(on) {
+    $("pwForm").hidden = !on; $("googleBox").hidden = on;
+    $("showGoogle").hidden = !GOOGLE_READY;
+    if (on) ($("username").value ? $("password") : $("username")).focus();
+  }
+  if (q.get("u")) $("username").value = q.get("u");
+  if (!GOOGLE_READY) { $("pwLede").textContent = "Google sign-in isn't set up yet, so sign in with the admin password. Set up Google from Settings."; showPw(true); }
+  else showPw(q.get("pw") === "1");
+  $("showPw").onclick = () => showPw(true);
+  $("showGoogle").onclick = () => showPw(false);
 </script>
 </body>
 </html>
