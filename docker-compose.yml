@@ -1,0 +1,22 @@
+# RxScan: pull-and-run. Only this file is needed on the server (plus an optional .env).
+#   docker compose pull && docker compose up -d
+services:
+  rxscan:
+    image: ghcr.io/mstras/rxscan:latest
+    container_name: rxscan
+    restart: unless-stopped
+    ports:
+      - "8096:8000"
+    env_file:
+      - path: .env          # optional: everything can also be set in the app's Settings
+        required: false
+    environment:
+      TZ: America/New_York
+      PUID: 1000            # files in ./data are owned by this user/group
+      PGID: 1000
+    volumes:
+      - ./data:/data        # settings, sign-in key, server-side receipt copies
+      # Optional: keep receipt copies in another folder (then Settings → Server folder: /receipts)
+      # - /mnt/two/Receipts:/receipts
+      # Only if you use a service account instead of the Apps Script connection:
+      # - ./config/service-account.json:/config/service-account.json:ro
