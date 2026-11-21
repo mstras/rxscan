@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.1
+**Dependency updates.** No new features and no setting changes.
+- The image now runs on Python 3.15 (was 3.12).
+- Photo reading: Pillow 13 and pillow-heif 1.8 (iPhone HEIC photos).
+- Newer minimum versions of httpx, requests and google-auth.
+- CI: newer versions of the checkout and Docker build actions.
+
 ## 1.1.0
 **Everyone gets their own sheet and folder.**
 - Sign in with Google. Only emails on the People list can sign in.
