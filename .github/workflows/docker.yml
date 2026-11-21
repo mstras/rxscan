@@ -62,7 +62,7 @@ jobs:
       # 2. Publish multi-arch image (not for pull requests).
       - name: Image tags
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.IMAGE }}
           tags: |
