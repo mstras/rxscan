@@ -19,7 +19,7 @@ from .parser import ParseError, active_model, list_models, parse_receipt, test_c
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("rxscan")
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 STATIC = Path(__file__).parent / "static"
 MAX_UPLOAD = 25 * 1024 * 1024
 PUBLIC_URL = os.getenv("PUBLIC_URL", "").rstrip("/")
