@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       # 1. Build for amd64 and make sure the container actually starts and serves.
       - name: Build test image
