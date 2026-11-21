@@ -226,6 +226,156 @@ SCREENS["09-admin-google-setup"] = page("Google setup", f"""
 # 10. review, dark
 SCREENS["10-review-dark"] = SCREENS["04-review"].replace('<html lang="en" class="light">', '<html lang="en" class="dark">')
 
+
+# ======================= Web / desktop screens =======================
+ICON.update({
+    "people": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5c2.3.3 3.9 1.9 4.5 4.5"/></svg>',
+    "eye": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    "key": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M15 8l2 2"/></svg>',
+})
+
+
+def side(active, admin=True, name="Michael Strasser", email="mstras@gmail.com", initial="M"):
+    def a(key, label, icon):
+        on = ' class="on"' if key == active else ""
+        return f'<a href="#"{on}>{ICON[icon]}{label}</a>'
+    adm = ""
+    if admin:
+        adm = ('<div class="navh">Admin</div>' + a("people", "People", "people")
+               + a("reading", "Reading receipts", "eye") + a("google", "Google setup", "key"))
+    return f"""<aside class="side">
+  <div class="brandrow"><div class="mark">{ICON["mark"]}</div><span class="brand">RxScan</span></div>
+  {a("scan", "Scan receipts", "camera")}{a("settings", "Your settings", "gear")}{adm}
+  <div class="me"><span class="avatar">{initial}</span><div><div class="t">{name}</div><div class="s">{email}</div></div></div>
+</aside>"""
+
+
+def webpage(title, inner):
+    return page(title, f'<div class="web">{inner}</div>')
+
+
+CAPTURE_WEB = f"""<section class="capture"><div class="scanline"></div>
+    <h1>Scan a receipt</h1><p>Photograph the receipt or the label on the pharmacy bag.</p>
+    <div class="actions"><button class="btn btn-primary">{ICON["photos"]}Choose photos</button><button class="btn btn-quiet">{ICON["camera"]}Use camera</button></div>
+    <div class="drop"><b>Drop photos here</b><br>JPEG, PNG or HEIC, several at once</div>
+  </section>"""
+
+SCREENS["web-01-sign-in"] = page("Sign in (web)", f"""
+<div class="signin-web">
+  <section class="art">
+    <div class="brandrow"><div class="mark">{ICON["mark"]}</div><span class="brand">RxScan</span></div>
+    <div class="stackart" aria-hidden="true">
+      {rx("0098817", "Nov 18", "Lisinopril", "10 mg", "30", "30", "5", "CVS Pharmacy #1234", "Dr. Patel", "4.00", "18.49")}
+      {rx("0123456", "Nov 18", "Atorvastatin", "20 mg", "90", "90", "3", "CVS Pharmacy #1234", "Dr. Patel", "10.00", "64.99")}
+    </div>
+    <h1>Snap the receipt. Skip the typing.</h1>
+    <p>RxScan reads your pharmacy receipts and adds each prescription to your own Google Sheet, with the photo saved alongside.</p>
+  </section>
+  <section class="panel">
+    <h2>Sign in</h2>
+    <p class="lede">Use the Google account the admin added for you.</p>
+    <button class="btn btn-google">{ICON["google"]}Sign in with Google</button>
+    <p class="fine">RxScan can see only the sheet and folder it creates or that you pick. Nothing else in your Drive.</p>
+  </section>
+</div>""")
+
+SCREENS["web-02-scan-review"] = webpage("Scan and review (web)", f"""{side("scan")}
+<main class="webmain">
+  <div class="pagehead"><div><h1>Scan receipts</h1><p class="sub">3 prescriptions from 2 photos are ready to check.</p></div>
+    <div class="acts"><button class="btn btn-line">Clear batch</button><button class="btn btn-primary">Add 3 to sheet</button></div></div>
+  <div class="scanlayout">
+    <div class="left">
+      {CAPTURE_WEB}
+      <div>{DEST}</div>
+      <div><div class="sectionhead"><h2>This batch</h2><span class="muted">2 photos</span></div>
+        <div class="queue wide">{shot("ok", "2 found")}{shot("ok", "1 found")}</div></div>
+    </div>
+    <div>
+      <div class="sectionhead"><h2>Check each label</h2><span class="muted">Edit anything before it goes to your sheet</span></div>
+      <div class="labels">
+        {rx("0123456", "Nov 18, 2026", "Atorvastatin", "20 mg", "90", "90", "3", "CVS Pharmacy #1234", "Dr. Anika Patel", "10.00", "64.99")}
+        {rx("0098817", "Nov 18, 2026", "Lisinopril", "10 mg", "30", "30", "—", "CVS Pharmacy #1234", "Dr. Anika Patel", "4.00", "18.49", flag="Refills was hard to read on the photo. Tap Edit to fill it in, or leave it blank.")}
+        {rx("5521093", "Nov 11, 2026", "Amoxicillin", "500 mg", "21", "7", "0", "Walgreens #08812", "Dr. Luis Romero", "6.20", "22.79")}
+      </div>
+    </div>
+  </div>
+</main>""")
+
+SCREENS["web-03-settings"] = webpage("Your settings (web)", f"""{side("settings")}
+<main class="webmain">
+  <div class="pagehead"><div><h1>Your settings</h1><p class="sub">Where your prescriptions and receipt photos go.</p></div></div>
+  <div class="settings-web">
+    <div>
+      <h2>Your sheet</h2>
+      <div class="group">
+        <div class="row"><div class="main"><div class="t">Prescriptions 2026</div><div class="s">Tab: Prescriptions</div></div><button class="act">Change</button></div>
+        <div class="row"><div class="main"><div class="t">Make a new sheet</div><div class="s">Starts with the column headers already in place</div></div><button class="act">Create</button></div>
+      </div>
+      <h2>Account</h2>
+      <div class="group">
+        <div class="row"><span class="ini">M</span><div class="main"><div class="t">Michael Strasser</div><div class="s">mstras@gmail.com</div></div><span class="pill green">Admin</span></div>
+        <div class="row"><div class="main"><div class="t">Sign out on this device</div></div><button class="act red">Sign out</button></div>
+      </div>
+    </div>
+    <div>
+      <h2>Receipt photos</h2>
+      <div class="group">
+        <div class="row"><div class="main"><div class="t">RxScan Receipts</div><div class="s">My Drive › RxScan Receipts</div></div><button class="act">Change</button></div>
+        <div class="row"><div class="main"><div class="t">A folder for each year</div><div class="s">RxScan Receipts › 2026</div></div><span class="toggle"></span></div>
+      </div>
+      <h2>Install</h2>
+      <div class="group">
+        <div class="row"><div class="main"><div class="t">Add RxScan to this computer</div><div class="s">Opens in its own window, like an app</div></div><button class="act">Install</button></div>
+      </div>
+    </div>
+  </div>
+</main>""")
+
+SCREENS["web-04-admin-people"] = webpage("People (web)", f"""{side("people")}
+<main class="webmain">
+  <div class="pagehead"><div><h1>People</h1><p class="sub">Only these Google accounts can sign in. Each person gets their own sheet and photo folder.</p></div></div>
+  <div class="addbar"><input placeholder="name@gmail.com" aria-label="Email to add"><button class="btn btn-primary">Add person</button></div>
+  <div class="tablewrap"><table class="people">
+    <thead><tr><th>Person</th><th>Role</th><th>Sheet</th><th>Last used</th><th></th></tr></thead>
+    <tbody>
+      <tr><td><div class="who"><span class="ini">M</span><div><div class="t">Michael Strasser</div><div class="muted">mstras@gmail.com</div></div></div></td><td><span class="pill green">Admin</span></td><td>Prescriptions 2026</td><td>Today</td><td></td></tr>
+      <tr><td><div class="who"><span class="ini">J</span><div><div class="t">Jenna Strasser</div><div class="muted">jenna.s@gmail.com</div></div></div></td><td>Member</td><td>RxScan – Jenna</td><td>Today</td><td><button class="act">Make admin</button> <button class="act red">Remove</button></td></tr>
+      <tr><td><div class="who"><span class="ini">R</span><div><div class="t">Robert Strasser</div><div class="muted">rob.strasser@gmail.com</div></div></div></td><td>Member</td><td>Family meds</td><td>Nov 2</td><td><button class="act">Make admin</button> <button class="act red">Remove</button></td></tr>
+      <tr><td><div class="who"><span class="ini">?</span><div><div class="t">grandma.ruth@gmail.com</div><div class="muted">Hasn't signed in yet</div></div></div></td><td><span class="pill amber">Invited</span></td><td>Made on first sign-in</td><td>Never</td><td><button class="act red">Remove</button></td></tr>
+    </tbody></table></div>
+  <p class="muted" style="margin-top:12px">Removing someone signs them out and stops RxScan from using their Google access. Their sheet and photos stay in their Drive.</p>
+</main>""")
+
+SCREENS["web-05-admin-google-setup"] = webpage("Google setup (web)", f"""{side("google")}
+<main class="webmain">
+  <div class="pagehead"><div><h1>Google setup</h1><p class="sub">One-time setup in Google Cloud so people can sign in with Google. About 15 minutes.</p></div>
+    <div class="acts"><button class="btn btn-primary">Save and test</button></div></div>
+  <div class="steps2">
+    <div>
+      <h2>In Google Cloud Console</h2>
+      <div class="group">
+        <div class="row"><div class="main"><div class="t">Turn on Sheets, Drive and Picker</div><div class="s">APIs & Services › Library</div></div><span class="pill green">Done</span></div>
+        <div class="row"><div class="main"><div class="t">Set up the consent screen</div><div class="s">External, then Publish app so sign-ins don't expire weekly</div></div><span class="pill green">Done</span></div>
+        <div class="row"><div class="main"><div class="t">Create a sign-in client</div><div class="s">Web application, with this redirect address:</div>
+          <div class="copyline"><code>https://rxscan.strasserco.com/auth/google/callback</code><button class="act">Copy</button></div></div></div>
+        <div class="row"><div class="main"><div class="t">Create an API key</div><div class="s">Restrict it to the Picker API</div></div><span class="pill amber">To do</span></div>
+      </div>
+    </div>
+    <div>
+      <h2>Values from Google Cloud</h2>
+      <div class="fields">
+        <div class="f full"><label>Client ID</label><input value="381920-abc.apps.googleusercontent.com"></div>
+        <div class="f full"><label>Client secret</label><input value="••••••••••••Zq4x"></div>
+        <div class="f"><label>API key</label><input class="blank" placeholder="AIza…"></div>
+        <div class="f"><label>Project number</label><input class="blank" placeholder="12-digit number"></div>
+      </div>
+      <div class="notice wait">{ICON["clock"]}<div><strong>Two values left.</strong><p>Sign-in stays on the admin password until all four are saved and tested.</p></div></div>
+    </div>
+  </div>
+</main>""")
+
+SCREENS["web-06-scan-review-dark"] = SCREENS["web-02-scan-review"].replace('<html lang="en" class="light">', '<html lang="en" class="dark">')
+
 for name, html in SCREENS.items():
     (OUT / f"{name}.html").write_text(html)
 print(f"wrote {len(SCREENS)} screens to {OUT}")

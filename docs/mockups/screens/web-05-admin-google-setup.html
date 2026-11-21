@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" class="light"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Google setup (web) · RxScan 1.1 mockup</title>
+<link rel="stylesheet" href="../rx.css">
+</head><body>
+<div class="web"><aside class="side">
+  <div class="brandrow"><div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z" fill="#fff"/></svg></div><span class="brand">RxScan</span></div>
+  <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Scan receipts</a><a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Your settings</a><div class="navh">Admin</div><a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5c2.3.3 3.9 1.9 4.5 4.5"/></svg>People</a><a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Reading receipts</a><a href="#" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M15 8l2 2"/></svg>Google setup</a>
+  <div class="me"><span class="avatar">M</span><div><div class="t">Michael Strasser</div><div class="s">mstras@gmail.com</div></div></div>
+</aside>
+<main class="webmain">
+  <div class="pagehead"><div><h1>Google setup</h1><p class="sub">One-time setup in Google Cloud so people can sign in with Google. About 15 minutes.</p></div>
+    <div class="acts"><button class="btn btn-primary">Save and test</button></div></div>
+  <div class="steps2">
+    <div>
+      <h2>In Google Cloud Console</h2>
+      <div class="group">
+        <div class="row"><div class="main"><div class="t">Turn on Sheets, Drive and Picker</div><div class="s">APIs & Services › Library</div></div><span class="pill green">Done</span></div>
+        <div class="row"><div class="main"><div class="t">Set up the consent screen</div><div class="s">External, then Publish app so sign-ins don't expire weekly</div></div><span class="pill green">Done</span></div>
+        <div class="row"><div class="main"><div class="t">Create a sign-in client</div><div class="s">Web application, with this redirect address:</div>
+          <div class="copyline"><code>https://rxscan.strasserco.com/auth/google/callback</code><button class="act">Copy</button></div></div></div>
+        <div class="row"><div class="main"><div class="t">Create an API key</div><div class="s">Restrict it to the Picker API</div></div><span class="pill amber">To do</span></div>
+      </div>
+    </div>
+    <div>
+      <h2>Values from Google Cloud</h2>
+      <div class="fields">
+        <div class="f full"><label>Client ID</label><input value="381920-abc.apps.googleusercontent.com"></div>
+        <div class="f full"><label>Client secret</label><input value="••••••••••••Zq4x"></div>
+        <div class="f"><label>API key</label><input class="blank" placeholder="AIza…"></div>
+        <div class="f"><label>Project number</label><input class="blank" placeholder="12-digit number"></div>
+      </div>
+      <div class="notice wait"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><div><strong>Two values left.</strong><p>Sign-in stays on the admin password until all four are saved and tested.</p></div></div>
+    </div>
+  </div>
+</main></div>
+
+</body></html>

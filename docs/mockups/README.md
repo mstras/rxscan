@@ -1,6 +1,10 @@
 # RxScan 1.1: design mockups
 
-![All screens](overview.png)
+## Phone
+![Phone screens](overview.png)
+
+## Web / desktop
+![Web screens](overview-web.png)
 
 ## Direction
 **The pharmacy bag label.** Each parsed prescription is shown as a crisp Rx label: a colored band with the Rx number and fill date, the drug name set large, and a ruled grid for quantity, days and refills. That label is the one loud element; everything around it stays quiet so the review step is fast to scan.
@@ -30,6 +34,18 @@
 | 8 | People (admin) | Allowlist of Google accounts who can sign in |
 | 9 | Google setup (admin) | Guided one-time Google Cloud setup |
 | 10 | Review, dark | Dark mode |
+
+### Web / desktop (1440 × 900)
+| Screen | Notes |
+|---|---|
+| Sign in | Split layout: the label motif on the navy panel, sign-in on the right |
+| Scan and review | Sidebar navigation; the scan panel (with drag-and-drop) stays pinned on the left while labels flow in columns on the right; "Add to sheet" sits in the page header |
+| Your settings | Two columns: sheet and account, photos and install |
+| People (admin) | Table with role, sheet and last use; make admin or remove |
+| Google setup (admin) | Checklist on the left, values on the right; copyable redirect address |
+| Scan and review, dark | Dark mode |
+
+Same tokens and components as the phone screens. The web layout switches on at 900 px wide.
 
 ## Regenerate
 ```bash
